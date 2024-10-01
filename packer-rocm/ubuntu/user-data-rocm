@@ -26,6 +26,7 @@ autoinstall:
       sizing-policy: all  
       # reset-partition: true  # impractical with ROCM/etc, large
   late-commands:
+  # 'execute_command' in 'ubuntu-rocm.pkr.hcl' depends on this sudo rule
     - echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/ubuntu
   package_update: true
   package_upgrade: true

@@ -43,9 +43,9 @@ build {
 
   provisioner "shell" {
     environment_vars  = ["HOME_DIR=/home/ubuntu", "http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
-    execute_command   = "echo 'ubuntu' | {{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
+    execute_command   = "{{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
     expect_disconnect = true
-    scripts           = ["${path.root}/scripts/curtin.sh", "${path.root}/scripts/networking.sh", "${path.root}/scripts/cleanup.sh"]
+    scripts           = ["${path.root}/scripts/curtin.sh", "${path.root}/scripts/networking.sh"]
   }
 
   provisioner "ansible" {
@@ -57,6 +57,11 @@ build {
       "-e", "rocm_release_build=${var.rocm_release_build}",  # pass ROCm-related vars to play
       "-e", "rocm_release=${var.rocm_release}"
     ]
+  }
+
+  provisioner "shell" {
+    execute_command   = "{{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
+    scripts           = ["${path.root}/scripts/cleanup.sh"]
   }
 
   post-processor "compress" {
