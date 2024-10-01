@@ -1,0 +1,31 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: ubuntu
+    username: ubuntu
+    password: "$6$5OcQlL5Sfjzsczoq$i8LnaFro3xOZ8mZ258DYtGMeWymBdLHts37F7LS.eV4SGe8cGWGWbcHQ/423aijQgMCGIKLMvEQCHpD2pSPKV0"
+  packages:
+    - "ansible"  # supports potential use of the ansible-local provisioner
+    - "python3.10-venv"  # pull venv+secondary executables
+    - "python3.11-venv"
+  keyboard:
+    layout: us
+    variant: ''
+  ssh:
+    install-server: true
+  storage:
+    grub:
+      update_nvram: true
+    swap:
+      size: 0
+    layout:
+      name: lvm
+      # ROCm compilation demands considerable space
+      # if 'scaled', 'disk_size' in 'ubuntu-rocm.pkr.hcl' must account for only 50% availability
+      sizing-policy: all  
+      # reset-partition: true  # impractical with ROCM/etc, large
+  late-commands:
+    - echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/ubuntu
+  package_update: true
+  package_upgrade: true

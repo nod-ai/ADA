@@ -1,0 +1,37 @@
+---
+# vim: ft=yaml.ansible
+# yamllint disable rule:line-length
+- name: ROCm Installation
+  hosts: default
+  become: true
+  vars:
+    rocm_amdgpu_pkg:
+      debian: "https://repo.radeon.com/amdgpu-install/{{ rocm_release }}/{{ ansible_distribution | lower }}/{{ ansible_distribution_release | lower }}/amdgpu-install_{{ rocm_release_build }}_all.deb"
+      redhat: "https://repo.radeon.com/amdgpu-install/{{ rocm_release }}/rhel/{{ ansible_distribution_version }}/amdgpu-install_{{ rocm_release_build }}.el{{ ansible_distribution_major_version }}.noarch.rpm"
+    rocm_reqs:
+      common:
+        - dkms
+      debian:
+        - "linux-headers-{{ ansible_kernel }}"
+        - "linux-modules-extra-{{ ansible_kernel }}"
+      redhat:
+        - "kernel-headers"
+        - "kernel-devel-matched"
+        - "kernel-modules-extra"
+  tasks:
+    - name: Install Requirements
+      ansible.builtin.package:
+        name: "{{ rocm_reqs['common'] + rocm_reqs[(ansible_os_family | lower)] }}"
+        state: present
+        update_cache: true  # passed to the modules for either 'apt' or 'dnf'; supported by either
+
+    - name: Install 'amdgpu-install'
+      ansible.builtin.package:  # module/backing package managers are inconsistent with URL handling as 'name'
+        name: "{{ rocm_amdgpu_pkg['redhat'] if ansible_os_family in ['RedHat'] else omit }}"
+        deb: "{{ rocm_amdgpu_pkg['debian'] if ansible_os_family in ['Debian'] else omit }}"
+
+    - name: Install amdgpu-dkms + ROCm
+      ansible.builtin.package:
+        name: ["amdgpu-dkms", "rocm"]
+        state: present
+        update_cache: true
