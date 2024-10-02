@@ -28,6 +28,8 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/nod-ai/ADA/redfish-exporter/slurm"
 )
 
 // Define a struct that matches the JSON structure
@@ -206,10 +208,16 @@ func processRequest(AppConfig Config, conn net.Conn, req *http.Request, eventCou
 		log.Printf("Message Args: %v", messageArgs)
 		log.Printf("Origin Of Condition: %s", originOfCondition)
 		for _, triggerEvent := range AppConfig.TriggerEvents {
-			if eventType == triggerEvent.EventType && eventId == triggerEvent.EventId && severity == triggerEvent.Severity {
+			redfishServerIP := fmt.Sprintf("https://%v", remote)
+			if eventType == triggerEvent.EventType && eventId == triggerEvent.EventId {
 				log.Printf("Matched Trigger Event: %s with action %s", triggerEvent.EventId, triggerEvent.Action)
-				// TODO: Add the SLURM integration here
 				// Sending event belings to redfish_utils. Each server may have different slurm node associated, and redfish_servers has the info/map.
+				for _, redfishServer := range AppConfig.RedfishServers {
+					if redfishServer.IP == redfishServerIP {
+						performEventAction(triggerEvent.Action, redfishServer.SlurmNode)
+						break
+					}
+				}
 				break
 			}
 		}
@@ -267,5 +275,15 @@ func sendErrorResponse(conn net.Conn, req *http.Request) {
 	err := response.Write(conn)
 	if err != nil {
 		log.Printf("Error writing error response: %v", err)
+	}
+}
+
+func performEventAction(action, slurmNode string) {
+	if action == "DrainNode" {
+		slurmClient := slurm.GetClient()
+		err := slurmClient.DrainNode(slurmNode)
+		if err != nil {
+			log.Printf("Error draining node: %v", err)
+		}
 	}
 }
