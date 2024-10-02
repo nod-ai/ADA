@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: silo
+
+resources:
+  - redfish-mock.yaml
+  - redfish-mock-service.yaml
+
+secretGenerator:
+  - name: redfish-mock-certs
+    files:
+      - cert.crt
+      - cert.key

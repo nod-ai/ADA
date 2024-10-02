@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redfish-exporter-configmap
+data:
+  servers: '[{"ip": "http://redfish-mock.silo.svc.cluster.local:8000", "username": "Username1", "password": "Password1", "loginType": "Session"}]'
+  subscription-payload: |
+    {
+      "Destination": "http://redfish-exporter.silo.svc.cluster.local:8080",
+      "EventTypes": ["Alert", "StatusChange"],
+      "Protocol": "Redfish",
+      "Context": "YourContextData"
+    }

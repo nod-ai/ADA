@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redfish-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redfish-exporter
+  template:
+    metadata:
+      labels:
+        app: redfish-exporter
+    spec:
+      containers:
+        - name: redfish-exporter
+          image: harbor.local/silo/redfish-exporter:latest
+          ports:
+            - containerPort: 8080
+              name: events
+            - containerPort: 2112
+              name: metrics
+          env:
+            - name: SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: redfish-exporter-configmap
+                  key: servers
+            - name: SUBSCRIPTION_PAYLOAD
+              valueFrom:
+                configMapKeyRef:
+                  name: redfish-exporter-configmap
+                  key: subscription-payload
