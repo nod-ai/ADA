@@ -21,10 +21,9 @@ autoinstall:
       size: 0
     layout:
       name: lvm
-      # ROCm compilation demands considerable space
-      # if 'scaled', 'disk_size' in 'ubuntu-rocm.pkr.hcl' must account for only 50% availability
-      sizing-policy: all  
-      # reset-partition: true  # impractical with ROCM/etc, large
+      # if 'sizing-policy' is 'scaled', 'disk_size' in 'ubuntu-rocm.pkr.hcl' must account for only 50% availability. compilation demands considerable space
+      sizing-policy: all
+      # reset-partition: true  # likely impractical with ROCm/amdgpu/etc, multiplies usage
   late-commands:
   # 'execute_command' in 'ubuntu-rocm.pkr.hcl' depends on this sudo rule
     - echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/ubuntu
