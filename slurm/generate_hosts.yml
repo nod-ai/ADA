@@ -1,0 +1,19 @@
+---
+- name: Generate /etc/hosts file
+  hosts: all
+  gather_facts: true
+  become: true  # Run tasks with sudo privileges
+  tasks:
+  # - name: Add Node names of all hosts to all hosts
+  #   lineinfile:
+  #     dest: /etc/hosts
+  #     line: "{{ ansible_host }}"
+    - name: Add IP address and hostname of all hosts to all hosts
+      ansible.builtin.blockinfile:
+        # create: true
+        # backup: true
+        path: /etc/cloud/templates/hosts.debian.tmpl
+        block: |
+          {% for host in groups['all'] %}
+            {{ hostvars[host]['ansible_facts']['default_ipv4']['address'] }} {{ hostvars[host]['ansible_facts']['fqdn'] }} {{ hostvars[host]['ansible_facts']['hostname'] }}
+          {% endfor %}

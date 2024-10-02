@@ -1,0 +1,33 @@
+---
+- name: Install SlurmDBD Node
+  hosts: slurmdbd_node
+  become: true
+  tasks:
+    - name: Install slurmdbd and supporting libraries
+      ansible.builtin.apt:
+        name: "{{ item }}"
+      with_items:
+        - mysql-server
+        - python3-mysqldb
+        - slurmdbd
+        - slurm
+    - name: Copy slurmdbd.conf
+      ansible.builtin.copy:
+        src: config/skywalker_slurmdbd.conf
+        dest: /etc/slurm/slurmdbd.conf
+        owner: slurm
+        group: slurm
+        mode: '0600'
+# As a prerequisite you need to install community.mysql
+# ansible-galaxy collection install community.mysql
+    - name: Create database user with name 'slurm' and password 'password' with all database privileges
+      community.mysql.mysql_user:
+        name: slurm
+        password: password
+        priv: '*.*:ALL'
+        state: present
+    - name: Create a new database with name 'slurm_acct_db'
+      community.mysql.mysql_db:
+        name: slurm_acct_db
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock

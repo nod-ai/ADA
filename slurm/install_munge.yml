@@ -1,0 +1,21 @@
+---
+- name: Install munge
+  hosts: all
+  become: true
+  tasks:
+    - name: Install munge and supporting libraries
+      ansible.builtin.apt:
+        name: "{{ item }}"
+      with_items:
+        - libmunge-dev
+        - libmunge2
+        - munge
+    - name: Enable munge and ensure it is not masked
+      ansible.builtin.systemd_service:
+        name: munge
+        enabled: true
+        masked: false
+    - name: Make sure munge is running
+      ansible.builtin.systemd_service:
+        state: started
+        name: munge

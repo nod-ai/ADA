@@ -1,0 +1,19 @@
+---
+- name: Install Slurm Head Node
+  hosts: slurm_head_node
+  become: true
+  tasks:
+    - name: Install slurm and supporting libraries for head node
+      ansible.builtin.apt:
+        name: "{{ item }}"
+      with_items:
+        - slurm
+        - slurmctld
+        - slurm-client
+    - name: Create spool directories
+      ansible.builtin.file:
+        path: /var/spool/slurmctld
+        state: directory
+        mode: '0755'
+        owner: slurm
+        group: slurm

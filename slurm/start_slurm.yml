@@ -1,0 +1,4 @@
+---
+- import_playbook: run_slurmdbd.yml
+- import_playbook: run_slurmctld.yml
+- import_playbook: run_slurmd.yml

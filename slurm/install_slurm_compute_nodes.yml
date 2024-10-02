@@ -1,0 +1,12 @@
+---
+- name: Install Slurm Compute Node
+  hosts: slurm_compute_nodes
+  become: true
+  tasks:
+    - name: Install slurm and supporting libraries for compute node
+      ansible.builtin.apt:
+        name: "{{ item }}"
+      with_items:
+        - slurm
+        - slurmd
+        - slurm-client

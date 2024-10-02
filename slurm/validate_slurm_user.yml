@@ -1,0 +1,12 @@
+---
+- name: Verify the slurm user exists and it's uid.gid
+  hosts: all
+  become: true
+  tasks:
+    - name: Get slurm user info
+      ansible.builtin.getent:
+        database: passwd
+        key: slurm
+    - name: Debug
+      ansible.builtin.debug:
+        var: ansible_facts.getent_passwd

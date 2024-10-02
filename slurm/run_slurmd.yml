@@ -1,0 +1,8 @@
+---
+- name: Start slurmd on all computing nodes
+  hosts: slurm_compute_nodes
+  gather_facts: false
+  become: true  # Run tasks with sudo privileges
+  tasks:
+    - name: Start slurmd
+      ansible.builtin.shell: /usr/sbin/slurmd

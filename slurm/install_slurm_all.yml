@@ -1,0 +1,9 @@
+---
+- import_playbook: install_munge.yml
+- import_playbook: install_slurmdbd.yml
+- import_playbook: install_slurm_head_node.yml
+- import_playbook: install_slurm_compute_nodes.yml
+- import_playbook: install_slurm_login_node.yml
+- import_playbook: generate_hosts.yml
+- import_playbook: generate_slurm_config.yml
+- import_playbook: reboot_slurm_nodes.yml

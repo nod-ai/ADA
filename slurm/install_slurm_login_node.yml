@@ -1,0 +1,11 @@
+---
+- name: Install Login Compute Node
+  hosts: slurm_login_node
+  become: true
+  tasks:
+    - name: Install slurm and supporting libraries for login node
+      ansible.builtin.apt:
+        name: "{{ item }}"
+      with_items:
+        - slurm
+        - slurm-client

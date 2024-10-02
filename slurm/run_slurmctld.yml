@@ -1,0 +1,8 @@
+---
+- name: Start slurmctld on all head node
+  hosts: slurm_head_node
+  gather_facts: false
+  become: true  # Run tasks with sudo privileges
+  tasks:
+    - name: Start slurmctld
+      ansible.builtin.shell: /usr/sbin/slurmctld

@@ -1,0 +1,8 @@
+---
+- name: Start slurmctld on db node
+  hosts: slurmdbd_node
+  gather_facts: false
+  become: true  # Run tasks with sudo privileges
+  tasks:
+    - name: Start slurmdbd
+      ansible.builtin.shell: /usr/sbin/slurmdbd

@@ -1,0 +1,7 @@
+- name: Reboot all slurm nodes
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Unconditionally reboot the machine with all defaults
+      ansible.builtin.reboot:
