@@ -13,8 +13,8 @@ for the `packer` CLI.
 1. Clone repositories:
 
     ```shell
-    git clone git@github.com:canonical/packer-maas.git
-    git clone git@github.com:nod-ai/ADA.git
+    git clone https://github.com/canonical/packer-maas.git
+    git clone https://github.com/nod-ai/ADA.git
     ```
 
 2. Copy assets from _ADA_ `packer-rocm` to the _Canonical_ `packer-maas` source:
