@@ -20,7 +20,7 @@ source "qemu" "rocm" {
   efi_boot        = true
   efi_drop_efivars = true
   format          = "raw"
-  headless        = false
+  headless        = var.headless
   http_directory  = var.http_directory
   shutdown_command       = "sudo -S shutdown -P now"
   ssh_handshake_attempts = 500
