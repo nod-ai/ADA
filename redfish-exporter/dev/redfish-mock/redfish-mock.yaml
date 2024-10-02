@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redfish-mock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redfish-mock
+  template:
+    metadata:
+      labels:
+        app: redfish-mock
+    spec:
+      containers:
+        - name: redfish-mock
+          image: dmtf/redfish-mockup-server:latest
+          ports:
+            - containerPort: 8000
+          command:
+            - "python"
+            - "/usr/src/app/redfishMockupServer.py"
+            - "--host=0.0.0.0"
+            - "--port=8000"
+            - "--cert=/etc/certs/cert.crt"
+            - "--key=/etc/certs/cert.key"
+          volumeMounts:
+            - name: redfish-mock-certs
+              mountPath: /etc/certs
+      volumes:
+        - name: redfish-mock-certs
+          secret:
+            secretName: redfish-mock-certs
