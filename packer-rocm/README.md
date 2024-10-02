@@ -34,5 +34,18 @@ for the `packer` CLI.
 ## Building
 
 ```shell
-PACKER_LOG=1 packer build -only=qemu.rocm .
+PACKER_LOG=1 packer build \
+    -var rocm_release=6.2.2 \
+    -var rocm_release_build=6.2.60202-1 \
+    -only=qemu.rocm .
 ```
+
+The `rocm_release` variables are optional. Defaults are provided.
+
+### Proxy
+
+If the build requires a proxy *[to pull the ISO/ROCm]*, these _environment variables_ are respected:
+
+* `http_proxy`
+* `https_proxy`
+* `no_proxy`
