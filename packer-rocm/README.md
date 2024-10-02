@@ -7,8 +7,13 @@ project.
 
 ## One-time Setup
 
-Please see [installation instructions](https://developer.hashicorp.com/packer/docs/install)
-for the `packer` CLI.
+### Requirements
+
+* [packer](https://developer.hashicorp.com/packer/docs/install)
+* `ansible-core`, examples: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
+* `qemu`
+
+### Sources
 
 1. Clone repositories:
 
