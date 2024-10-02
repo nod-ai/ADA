@@ -47,7 +47,7 @@ The artifact is named `ubuntu-rocm.dd.gz`. The `rocm_release` variables are opti
 
 ### Proxy
 
-If the build requires a proxy for downloading the ISO, updates, or ROCM, these _environment variables_ are respected:
+If the build requires a proxy for downloading the ISO, updates, or ROCm... these _environment variables_ are respected:
 
 * `http_proxy`
 * `https_proxy`
