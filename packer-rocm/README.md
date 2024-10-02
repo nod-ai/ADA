@@ -34,6 +34,10 @@ for the `packer` CLI.
 ## Building
 
 ```shell
+# Change working directory to the prepared sources
+cd packer-maas/ubuntu
+
+# Build
 PACKER_LOG=1 packer build \
     -var rocm_release=6.2.2 \
     -var rocm_release_build=6.2.60202-1 \
