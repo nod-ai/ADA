@@ -16,17 +16,11 @@ project.
 
 ### Playbook
 
-1. Clone _ADA_ repository:
+Clone and run with `ansible-pull`:
 
-    ```shell
-    git clone https://github.com/nod-ai/ADA.git
-    ```
-
-2. Run:
-
-    ```shell
-    ansible-playbook playbooks/build.yml
-    ```
+```shell
+ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml
+```
 
 ### Manual
 
