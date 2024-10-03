@@ -61,7 +61,10 @@ ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.ym
 
 ### I/O
 
-The artifact is named `ubuntu-rocm.dd.gz`. These _Packer_ variables are optional, defaults are shown:
+The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it may be here:  
+`~/.ansible/pull/$HOSTNAME/packer-rocm/packer-maas/ubuntu`
+
+These _Packer_ variables are optional, defaults are shown:
 
 * `rocm_release`
 * `rocm_release_build`
