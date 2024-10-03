@@ -16,11 +16,11 @@ project.
 
 ### Playbook
 
-Clone and run the play with `ansible-pull`:
+Clone and run with `ansible-pull`:
 
-    ```shell
-    ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml
-    ```
+```shell
+ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml
+```
 
 ### Manual
 
