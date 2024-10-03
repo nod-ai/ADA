@@ -1,7 +1,7 @@
 # packer-rocm
 
 [MaaS](https://maas.io/)-enabled [Packer](https://www.packer.io/) images
-with [ROCm](https://www.amd.com/en/products/software/rocm.html) installed.
+with [amdgpu-install](https://amdgpu-install.readthedocs.io/en/latest/) and [ROCm](https://www.amd.com/en/products/software/rocm.html) installed.
 Builds on the [canonical/packer-maas](https://github.com/canonical/packer-maas/)
 project.
 
