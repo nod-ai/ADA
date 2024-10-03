@@ -56,7 +56,8 @@ build {
       "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
       "--scp-extra-args", "'-O'",
       "-e", "rocm_release_build=${var.rocm_release_build}",  # pass ROCm requests
-      "-e", "rocm_release=${var.rocm_release}"
+      "-e", "rocm_release=${var.rocm_release}",
+      "-e", "amdgpu_install=${join(",", var.amdgpu_install)}"
     ]
   }
 

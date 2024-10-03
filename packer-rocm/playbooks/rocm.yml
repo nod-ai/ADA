@@ -34,9 +34,13 @@
         name: "{{ rocm_amdgpu_pkg['redhat'] if ansible_os_family in ['RedHat'] else omit }}"
         deb: "{{ rocm_amdgpu_pkg['debian'] if ansible_os_family in ['Debian'] else omit }}"
 
-    - name: Install amdgpu-dkms + ROCm
+    - name: "Install {{ _pkgs }}"
       ansible.builtin.package:
-        name: ["amdgpu-dkms", "rocm"]
+        name: "{{ _pkgs }}"
         state: present
         update_cache: true
+      vars:
+        # serialized through 'extra_arguments' with Packer/the Ansible plugin
+        # use 'split' filter to return this comma-separated string to a list [if applicable]
+        _pkgs: "{{ amdgpu_install | split(',') }}"  # default: '["amdgpu-dkms", "rocm"]', see 'ubuntu-rocm.variables.pkr.hcl'
 # vim: ft=yaml.ansible

@@ -46,9 +46,15 @@ cd packer-maas/ubuntu
 PACKER_LOG=1 packer build \
     -var rocm_release=6.2.2 \
     -var rocm_release_build=6.2.60202-1 \
+    -var amdgpu_install='["amdgpu-dkms", "rocm"]' \
     -only=qemu.rocm .
 ```
-The artifact is named `ubuntu-rocm.dd.gz`. The `rocm_release` variables are optional. Potentially-changing defaults are provided.
+
+The artifact is named `ubuntu-rocm.dd.gz`. These _Packer_ variables are optional, defaults are shown:
+
+* `rocm_release`
+* `rocm_release_build`
+* `amdgpu_install`
 
 ### Proxy
 
