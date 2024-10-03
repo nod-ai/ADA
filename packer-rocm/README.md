@@ -8,6 +8,12 @@ project.
 
 ## Building
 
+### Requirements
+
+* [packer](https://developer.hashicorp.com/packer/docs/install)
+* `ansible-core`, examples: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
+* `qemu`
+
 ### Playbook
 
 1. Clone _ADA_ repository:
@@ -23,16 +29,6 @@ project.
     ```
 
 ### Manual
-
-#### One-time Setup
-
-#### Requirements
-
-* [packer](https://developer.hashicorp.com/packer/docs/install)
-* `ansible-core`, examples: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
-* `qemu`
-
-#### Sources
 
 1. Clone repositories:
 
@@ -69,13 +65,15 @@ project.
         -only=qemu.rocm .
     ```
 
+### I/O
+
 The artifact is named `ubuntu-rocm.dd.gz`. These _Packer_ variables are optional, defaults are shown:
 
 * `rocm_release`
 * `rocm_release_build`
 * `amdgpu_install`
 
-### Proxy
+#### Proxy
 
 If the build requires a proxy for downloading the ISO, updates, or ROCm... these _environment variables_ are respected:
 
