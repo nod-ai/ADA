@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
-	"github.com/stmcginnis/gofish/redfish"
 )
 
 type Config struct {
@@ -26,32 +25,11 @@ type Config struct {
 		KeyFile  string
 	}
 	SubscriptionPayload SubscriptionPayload
-	ServerInformation   struct {
-		Servers []Server
-	}
-	TriggerEvents []TriggerEvent
-	context       *tls.Config
-	eventCount    int
-	dataBuffer    []byte
-}
-
-type SubscriptionPayload struct {
-	Destination         string                           `json:"Destination,omitempty"`
-	EventTypes          []redfish.EventType              `json:"EventTypes,omitempty"`
-	RegistryPrefixes    []string                         `json:"RegistryPrefixes,omitempty"`
-	ResourceTypes       []string                         `json:"ResourceTypes,omitempty"`
-	DeliveryRetryPolicy redfish.DeliveryRetryPolicy      `json:"DeliveryRetryPolicy,omitempty"`
-	HTTPHeaders         map[string]string                `json:"HttpHeaders,omitempty"`
-	Oem                 interface{}                      `json:"Oem,omitempty"`
-	Protocol            redfish.EventDestinationProtocol `json:"Protocol,omitempty"`
-	Context             string                           `json:"Context,omitempty"`
-}
-
-type Server struct {
-	IP        string `json:"ip"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	LoginType string `json:"loginType"`
+	RedfishServers      []RedfishServer
+	TriggerEvents       []TriggerEvent
+	context             *tls.Config
+	eventCount          int
+	dataBuffer          []byte
 }
 
 type TriggerEvent struct {
@@ -117,14 +95,14 @@ func setupConfig() Config {
 			log.Fatalf("Failed to unmarshal TRIGGER_EVENTS: %v", err)
 		}
 	}
-	// Read and parse the SERVERS environment variable
-	serversJSON := os.Getenv("SERVERS")
-	if serversJSON == "" {
-		log.Println("SERVERS environment variable is not set or is empty")
+	// Read and parse the REDFISH_SERVERS environment variable
+	redfishServersJSON := os.Getenv("REDFISH_SERVERS")
+	if redfishServersJSON == "" {
+		log.Println("REDFISH_SERVERS environment variable is not set or is empty")
 		return AppConfig
 	}
-	if err := json.Unmarshal([]byte(serversJSON), &AppConfig.ServerInformation.Servers); err != nil {
-		log.Fatalf("Failed to parse SERVERS: %v", err)
+	if err := json.Unmarshal([]byte(redfishServersJSON), &AppConfig.RedfishServers); err != nil {
+		log.Fatalf("Failed to parse REDFISH_SERVERS: %v", err)
 	}
 
 	return AppConfig

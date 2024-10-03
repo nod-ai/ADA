@@ -21,11 +21,11 @@ spec:
             - containerPort: 2112
               name: metrics
           env:
-            - name: SERVERS
+            - name: REDFISH_SERVERS
               valueFrom:
                 configMapKeyRef:
                   name: redfish-exporter-configmap
-                  key: servers
+                  key: redfish-servers
             - name: SUBSCRIPTION_PAYLOAD
               valueFrom:
                 configMapKeyRef:
