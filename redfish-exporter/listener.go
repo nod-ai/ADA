@@ -186,8 +186,9 @@ func processRequest(AppConfig Config, conn net.Conn, req *http.Request, eventCou
 		log.Printf("Origin Of Condition: %s", originOfCondition)
 		for _, triggerEvent := range AppConfig.TriggerEvents {
 			if eventType == triggerEvent.EventType && eventId == triggerEvent.EventId && severity == triggerEvent.Severity {
-				log.Printf("Matched Trigger Event: %+v", triggerEvent)
+				log.Printf("Matched Trigger Event: %s with action %s", triggerEvent.EventId, triggerEvent.Action)
 				// TODO: Add the SLURM integration here
+				// Sending event belings to redfish_utils. Each server may have different slurm node associated, and redfish_servers has the info/map.
 				break
 			}
 		}

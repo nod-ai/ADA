@@ -35,10 +35,12 @@ type Config struct {
 		ListenerIP   string
 		ListenerPort int
 		UseSSL       bool
+		MetricsPort  int
 	}
 	CertificateDetails struct {
-		CertFile string
-		KeyFile  string
+		CertFile   string
+		KeyFile    string
+		SlurmToken string
 	}
 	SubscriptionPayload SubscriptionPayload
 	RedfishServers      []RedfishServer
@@ -52,10 +54,12 @@ type TriggerEvent struct {
 	EventId   string `json:"EventId"`
 	EventType string `json:"EventType"`
 	Severity  string `json:"Severity"`
+	Action    string `json:"Action"`
 }
 
 const (
 	DefaultListenerPort = "8080"
+	DefaultMetricsPort  = "2112"
 	DefaultUseSSL       = "false"
 )
 
@@ -85,6 +89,16 @@ func setupConfig() Config {
 	}
 	AppConfig.SystemInformation.ListenerPort = listenerPort
 
+	// Metrics Port Configuration
+	metricsPortStr := os.Getenv("METRICS_PORT")
+	if metricsPortStr == "" {
+		metricsPortStr = DefaultMetricsPort
+	}
+	metricsPort, err := strconv.Atoi(metricsPortStr)
+	if err != nil {
+		log.Fatalf("Failed to parse METRICS_PORT: %v", err)
+	}
+	AppConfig.SystemInformation.MetricsPort = metricsPort
 	// Read and parse USE_SSL with a default value
 	useSSLStr := os.Getenv("USE_SSL")
 	if useSSLStr == "" {
@@ -98,6 +112,7 @@ func setupConfig() Config {
 
 	AppConfig.CertificateDetails.CertFile = os.Getenv("CERTFILE")
 	AppConfig.CertificateDetails.KeyFile = os.Getenv("KEYFILE")
+	AppConfig.CertificateDetails.SlurmToken = os.Getenv("SLURM_TOKEN")
 
 	subscriptionPayloadJSON := os.Getenv("SUBSCRIPTION_PAYLOAD")
 	if err := json.Unmarshal([]byte(subscriptionPayloadJSON), &AppConfig.SubscriptionPayload); err != nil {
