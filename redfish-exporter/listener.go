@@ -281,9 +281,11 @@ func sendErrorResponse(conn net.Conn, req *http.Request) {
 func performEventAction(action, slurmNode string) {
 	if action == "DrainNode" {
 		slurmClient := slurm.GetClient()
-		err := slurmClient.DrainNode(slurmNode)
-		if err != nil {
-			log.Printf("Error draining node: %v", err)
+		if slurmClient != nil {
+			err := slurmClient.DrainNode(slurmNode)
+			if err != nil {
+				log.Printf("Error draining node: %v", err)
+			}
 		}
 	}
 }

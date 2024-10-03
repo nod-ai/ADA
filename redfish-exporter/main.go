@@ -17,18 +17,26 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/nod-ai/ADA/redfish-exporter/slurm"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
+	var (
+		enableSlurm = flag.Bool("enable-slurm", false, "Enable slurm")
+	)
+	flag.Parse()
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Println("Starting Redfish Event Listener/Exporter")
 
@@ -37,6 +45,22 @@ func main() {
 
 	// Log the initialized config
 	log.Printf("Initialized Config: %+v", AppConfig)
+
+	if *enableSlurm {
+		if len(strings.Trim(AppConfig.SlurmToken, "")) == 0 {
+			log.Fatalf("Provide slurm token to enable slurm")
+		}
+		if len(strings.Trim(AppConfig.SlurmControlNode, "")) == 0 {
+			log.Fatalf("Provide slurm control node IP:Port to enable slurm")
+		}
+		_, err := slurm.NewClient(AppConfig.SlurmControlNode, AppConfig.SlurmToken)
+		if err != nil {
+			log.Fatalf("failed to create slurm client, err: %+v", err)
+		}
+	}
+
+	// Channel to signal shutdown
+	shutdownChan := make(chan struct{})
 
 	// Subscribe the listener to the event stream for all servers
 	subscriptionMap, err := CreateSubscriptionsForAllServers(AppConfig.RedfishServers, AppConfig.SubscriptionPayload)
