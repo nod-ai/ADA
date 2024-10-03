@@ -15,7 +15,7 @@ variable "rocm_release_build" {
 
 variable "amdgpu_install" {
   type = list(string)
-  default = ["amdgpu-dkms", "rocm"]
+  default = ["amdgpu-dkms", "rocm", "mesa-amdgpu-va-drivers"]
   description = "The packages to install with Ansible [after installing 'amdgpu-install']"
 }
 

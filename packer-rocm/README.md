@@ -55,7 +55,7 @@ ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.ym
     PACKER_LOG=1 packer build \
         -var rocm_release=6.2.2 \
         -var rocm_release_build=6.2.60202-1 \
-        -var amdgpu_install='["amdgpu-dkms", "rocm"]' \
+        -var amdgpu_install='["amdgpu-dkms", "rocm", "mesa-amdgpu-va-drivers"]' \
         -only=qemu.rocm .
     ```
 
