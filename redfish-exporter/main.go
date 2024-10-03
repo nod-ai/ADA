@@ -41,7 +41,7 @@ func main() {
 	shutdownChan := make(chan struct{})
 
 	// Subscribe the listener to the event stream for all servers
-	subscriptionMap, err := CreateEventSubscriptionsForAllServers(AppConfig)
+	subscriptionMap, err := CreateSubscriptionsForAllServers(AppConfig.RedfishServers, AppConfig.SubscriptionPayload)
 	if err != nil {
 		// TODO detect if error is due to already being subscribed, and delete/re-add subscription.
 		log.Fatalf("Failed to create subscriptions: %v", err)
@@ -74,7 +74,7 @@ func main() {
 
 	// Unsubscribe the listener from all servers
 	log.Println("Unsubscribing from servers...")
-	DeleteAllSubscriptions(AppConfig, subscriptionMap)
+	DeleteSubscriptionsFromAllServers(AppConfig.RedfishServers, subscriptionMap)
 
 	// Perform any additional shutdown steps here
 	log.Println("Shutdown complete")

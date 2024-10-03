@@ -24,8 +24,27 @@ import (
 	"github.com/stmcginnis/gofish/redfish"
 )
 
+type RedfishServer struct {
+	IP        string `json:"ip"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	LoginType string `json:"loginType"`
+}
+
+type SubscriptionPayload struct {
+	Destination         string                           `json:"Destination,omitempty"`
+	EventTypes          []redfish.EventType              `json:"EventTypes,omitempty"`
+	RegistryPrefixes    []string                         `json:"RegistryPrefixes,omitempty"`
+	ResourceTypes       []string                         `json:"ResourceTypes,omitempty"`
+	DeliveryRetryPolicy redfish.DeliveryRetryPolicy      `json:"DeliveryRetryPolicy,omitempty"`
+	HTTPHeaders         map[string]string                `json:"HttpHeaders,omitempty"`
+	Oem                 interface{}                      `json:"Oem,omitempty"`
+	Protocol            redfish.EventDestinationProtocol `json:"Protocol,omitempty"`
+	Context             string                           `json:"Context,omitempty"`
+}
+
 // Create a new connection to a redfish server
-func newRedfishClient(server Server) (*gofish.APIClient, error) {
+func getRedfishClient(server RedfishServer) (*gofish.APIClient, error) {
 	clientConfig := gofish.ClientConfig{
 		Endpoint: server.IP,
 		Username: server.Username,
@@ -33,61 +52,38 @@ func newRedfishClient(server Server) (*gofish.APIClient, error) {
 		Insecure: true, // TODO Set Based on login type
 	}
 
-	client, err := gofish.Connect(clientConfig)
+	c, err := gofish.Connect(clientConfig)
 	if err != nil {
-		log.Printf("Error connecting to server %s: %v", server.IP, err)
+		log.Printf("Error connecting to redfish server %s: %v", server.IP, err)
 		return nil, err
 	}
 
-	log.Printf("Successfully connected to server %s", server.IP)
-	return client, nil
+	log.Printf("Successfully connected to redfish server %s", server.IP)
+	return c, nil
 }
 
-// Create subscriptions for all servers and return their URIs
-// Rollback if any subscription attempt fails
-func CreateEventSubscriptionsForAllServers(AppConfig Config) (map[string]string, error) {
-	subscriptionMap := make(map[string]string)
+// Create a subscription
+func createSubscription(server RedfishServer, SubscriptionPayload SubscriptionPayload) (string, error) {
 
-	// TODO Add concurrency
-	for _, server := range AppConfig.ServerInformation.Servers {
-		// Establish a connection to the server
-		c, err := newRedfishClient(server)
-		if err != nil {
-			log.Printf("Failed to connect to server %s: %v", server.IP, err)
-			// Rollback subscriptions in case of failure
-			DeleteAllSubscriptions(AppConfig, subscriptionMap)
-			return nil, fmt.Errorf("subscription failed on server %s: %v, cleaning up previous subscriptions", server.IP, err)
-		}
+	// Establish a connection to the server
+	c, err := getRedfishClient(server)
+	if err != nil {
+		return "", fmt.Errorf("failed to connect to server %s: %v", server.IP, err)
+	}
+	defer c.Logout()
 
-		defer c.Logout()
-
-		eventService, err := c.Service.EventService()
-		if err != nil {
-			log.Printf("Failed to get event service for server %s: %v", server.IP, err)
-			DeleteAllSubscriptions(AppConfig, subscriptionMap)
-			return nil, fmt.Errorf("subscription failed on server %s, cleaning up previous subscriptions", server.IP)
-		}
-
-		var subscriptionURI string
-		// Decide which subscription to create based on the Redfish version
-		if isV1_5() {
-			subscriptionURI, err = createV1_5Subscription(eventService, AppConfig)
-		} else {
-			subscriptionURI, err = createLegacySubscription(eventService, AppConfig)
-		}
-
-		if err != nil {
-			log.Printf("Failed to create event subscription on server %s: %v", server.IP, err)
-			DeleteAllSubscriptions(AppConfig, subscriptionMap)
-			return nil, fmt.Errorf("subscription failed on server %s, cleaning up previous subscriptions", server.IP)
-		}
-
-		log.Printf("Successfully created subscription on server %s: %s", server.IP, subscriptionURI)
-		subscriptionMap[server.IP] = subscriptionURI
+	// Get the event service
+	eventService, err := c.Service.EventService()
+	if err != nil {
+		return "", fmt.Errorf("failed to get event service for server: %v", err)
 	}
 
-	return subscriptionMap, nil
-
+	// Create the subscription based on the Redfish version
+	if isV1_5() {
+		return createV1_5Subscription(eventService, SubscriptionPayload)
+	} else {
+		return createLegacySubscription(eventService, SubscriptionPayload)
+	}
 }
 
 func isV1_5() bool {
@@ -97,16 +93,16 @@ func isV1_5() bool {
 }
 
 // Create V1.5 subscription
-func createV1_5Subscription(eventService *redfish.EventService, AppConfig Config) (string, error) {
+func createV1_5Subscription(eventService *redfish.EventService, SubscriptionPayload SubscriptionPayload) (string, error) {
 	subscriptionURI, err := eventService.CreateEventSubscriptionInstance(
-		AppConfig.SubscriptionPayload.Destination,
-		AppConfig.SubscriptionPayload.RegistryPrefixes,
-		AppConfig.SubscriptionPayload.ResourceTypes,
-		AppConfig.SubscriptionPayload.HTTPHeaders,
-		AppConfig.SubscriptionPayload.Protocol,
-		AppConfig.SubscriptionPayload.Context,
-		AppConfig.SubscriptionPayload.DeliveryRetryPolicy,
-		AppConfig.SubscriptionPayload.Oem,
+		SubscriptionPayload.Destination,
+		SubscriptionPayload.RegistryPrefixes,
+		SubscriptionPayload.ResourceTypes,
+		SubscriptionPayload.HTTPHeaders,
+		SubscriptionPayload.Protocol,
+		SubscriptionPayload.Context,
+		SubscriptionPayload.DeliveryRetryPolicy,
+		SubscriptionPayload.Oem,
 	)
 
 	if err != nil {
@@ -117,14 +113,14 @@ func createV1_5Subscription(eventService *redfish.EventService, AppConfig Config
 }
 
 // Create legacy subscription
-func createLegacySubscription(eventService *redfish.EventService, AppConfig Config) (string, error) {
+func createLegacySubscription(eventService *redfish.EventService, SubscriptionPayload SubscriptionPayload) (string, error) {
 	subscriptionURI, err := eventService.CreateEventSubscription(
-		AppConfig.SubscriptionPayload.Destination,
-		AppConfig.SubscriptionPayload.EventTypes,
-		AppConfig.SubscriptionPayload.HTTPHeaders,
-		AppConfig.SubscriptionPayload.Protocol,
-		AppConfig.SubscriptionPayload.Context,
-		AppConfig.SubscriptionPayload.Oem,
+		SubscriptionPayload.Destination,
+		SubscriptionPayload.EventTypes,
+		SubscriptionPayload.HTTPHeaders,
+		SubscriptionPayload.Protocol,
+		SubscriptionPayload.Context,
+		SubscriptionPayload.Oem,
 	)
 
 	if err != nil {
@@ -134,39 +130,70 @@ func createLegacySubscription(eventService *redfish.EventService, AppConfig Conf
 	return subscriptionURI, nil
 }
 
+// Create subscriptions for all servers and return their URIs
+// Rollback if any subscription attempt fails
+func CreateSubscriptionsForAllServers(redfishServers []RedfishServer, subscriptionPayload SubscriptionPayload) (map[string]string, error) {
+	subscriptionMap := make(map[string]string)
+
+	for _, server := range redfishServers {
+
+		// Establish a connection to the server
+		subscriptionURI, err := createSubscription(server, subscriptionPayload)
+		if err != nil {
+			DeleteSubscriptionsFromAllServers(redfishServers, subscriptionMap)
+			return nil, fmt.Errorf("subscription failed on server %s: %v, rolling back previous subscriptions", server.IP, err)
+		}
+
+		log.Printf("Successfully created subscription on redfish server %s: %s", server.IP, subscriptionURI)
+		subscriptionMap[server.IP] = subscriptionURI
+	}
+
+	return subscriptionMap, nil
+}
+
 // Delete all event subscriptions stored in the map
-func DeleteAllSubscriptions(AppConfig Config, subscriptionMap map[string]string) {
+func DeleteSubscriptionsFromAllServers(redfishServers []RedfishServer, subscriptionMap map[string]string) {
 	for serverIP, subscriptionURI := range subscriptionMap {
-		server := getServerCredentials(AppConfig, serverIP)
-		c, err := newRedfishClient(server)
+		server := getServerCredentials(redfishServers, serverIP)
+		err := deleteSubscriptionFromServer(server, subscriptionURI)
 		if err != nil {
-			log.Printf("Failed to connect to server %s for cleanup: %v", serverIP, err)
-			continue
-		}
-
-		defer c.Logout()
-
-		eventService, err := c.Service.EventService()
-		if err != nil {
-			log.Printf("Failed to get event service for cleanup on server %s: %v", serverIP, err)
-			continue
-		}
-
-		err = eventService.DeleteEventSubscription(subscriptionURI)
-		if err != nil {
-			log.Printf("Failed to delete event subscription on server %s: %v", serverIP, err)
+			log.Printf("Failed to delete event subscription on server %s: %v", server.IP, err)
 		} else {
-			log.Printf("Successfully deleted event subscription from server %s", serverIP)
+			log.Printf("Successfully deleted event subscription from server %s", server.IP)
 		}
 	}
 }
 
+// Delete a subscription from a redfish server
+func deleteSubscriptionFromServer(server RedfishServer, subscriptionURI string) error {
+
+	c, err := getRedfishClient(server)
+	if err != nil {
+		return fmt.Errorf("failed to connect to redfish server %s: %v", server.IP, err)
+	}
+	defer c.Logout()
+
+	// Get the event service
+	eventService, err := c.Service.EventService()
+	if err != nil {
+		return fmt.Errorf("failed to get event service on server %s: %v", server.IP, err)
+	}
+
+	// Attempt to delete the subscription
+	err = eventService.DeleteEventSubscription(subscriptionURI)
+	if err != nil {
+		return fmt.Errorf("failed to delete event subscription on server %s: %v", server.IP, err)
+	}
+
+	return nil
+}
+
 // Retrieve the server's credentials from the config based on IP
-func getServerCredentials(AppConfig Config, serverIP string) Server {
-	for _, server := range AppConfig.ServerInformation.Servers {
-		if server.IP == serverIP {
-			return server
+func getServerCredentials(redfishServers []RedfishServer, serverIP string) RedfishServer {
+	for _, redfishServer := range redfishServers {
+		if redfishServer.IP == serverIP {
+			return redfishServer
 		}
 	}
-	return Server{}
+	return RedfishServer{}
 }
