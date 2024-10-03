@@ -29,6 +29,7 @@ type RedfishServer struct {
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	LoginType string `json:"loginType"`
+	SlurmNode string `json:"slurmNode`
 }
 
 type SubscriptionPayload struct {

@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -52,8 +53,9 @@ func main() {
 
 	http.Handle("/metrics", promhttp.Handler())
 	go func() {
-		log.Println("Starting metrics server on :2112")
-		if err := http.ListenAndServe(":2112", nil); err != nil && err != http.ErrServerClosed {
+		log.Printf("Starting metrics server on :%d", AppConfig.SystemInformation.MetricsPort)
+		portStr := strconv.Itoa(AppConfig.SystemInformation.MetricsPort)
+		if err := http.ListenAndServe(":"+portStr, nil); err != nil && err != http.ErrServerClosed {
 			log.Printf("Metrics server error: %v", err)
 		}
 	}()
