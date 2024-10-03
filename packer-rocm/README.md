@@ -1,11 +1,12 @@
 # packer-rocm
 
 [MaaS](https://maas.io/)-enabled [Packer](https://www.packer.io/) images
-with [ROCm](https://www.amd.com/en/products/software/rocm.html) installed.
+with [amdgpu-install](https://amdgpu-install.readthedocs.io/en/latest/) and [ROCm](https://www.amd.com/en/products/software/rocm.html) installed.
 Builds on the [canonical/packer-maas](https://github.com/canonical/packer-maas/)
 project.
 
-## One-time Setup
+
+## Building
 
 ### Requirements
 
@@ -13,7 +14,21 @@ project.
 * `ansible-core`, examples: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
 * `qemu`
 
-### Sources
+### Playbook
+
+1. Clone _ADA_ repository:
+
+    ```shell
+    git clone https://github.com/nod-ai/ADA.git
+    ```
+
+2. Run:
+
+    ```shell
+    ansible-playbook playbooks/build.yml
+    ```
+
+### Manual
 
 1. Clone repositories:
 
@@ -36,21 +51,29 @@ project.
     packer init .
     ```
 
-## Building
+4. Build
 
-```shell
-# Change working directory to the prepared sources
-cd packer-maas/ubuntu
+    ```shell
+    # Change working directory to the prepared sources
+    cd packer-maas/ubuntu
 
-# Build
-PACKER_LOG=1 packer build \
-    -var rocm_release=6.2.2 \
-    -var rocm_release_build=6.2.60202-1 \
-    -only=qemu.rocm .
-```
-The artifact is named `ubuntu-rocm.dd.gz`. The `rocm_release` variables are optional. Potentially-changing defaults are provided.
+    # Build
+    PACKER_LOG=1 packer build \
+        -var rocm_release=6.2.2 \
+        -var rocm_release_build=6.2.60202-1 \
+        -var amdgpu_install='["amdgpu-dkms", "rocm"]' \
+        -only=qemu.rocm .
+    ```
 
-### Proxy
+### I/O
+
+The artifact is named `ubuntu-rocm.dd.gz`. These _Packer_ variables are optional, defaults are shown:
+
+* `rocm_release`
+* `rocm_release_build`
+* `amdgpu_install`
+
+#### Proxy
 
 If the build requires a proxy for downloading the ISO, updates, or ROCm... these _environment variables_ are respected:
 

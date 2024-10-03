@@ -1,0 +1,46 @@
+---
+# vim: ft=yaml.ansible
+- name: Build 'packer-rocm'
+  hosts: localhost
+  gather_facts: false
+  vars:
+    packer_rocm_dir: "{{ (playbook_dir, '..') | path_join }}"
+    packer_maas_dir: "{{ (packer_rocm_dir, 'packer-maas') | path_join }}"
+  tasks:
+    - name: Preparation
+      tags: ['prep']
+      block:
+        - name: "Manage clone for 'packer-maas' under ADA"
+          ansible.builtin.git:
+            repo: "https://github.com/canonical/packer-maas.git"
+            dest: "{{ packer_maas_dir }}"
+            version: "{{ packer_maas_tag | default('v1.2.0') }}"
+
+        - name: "Synchronize 'packer-maas' with ADA 'packer-rocm' assets"
+          ansible.posix.synchronize:
+            src: "{{ packer_rocm_dir }}/"  # trailing '/' on source is significant; copying *contents* of the dir
+            dest: "{{ packer_maas_dir }}"
+            rsync_opts:
+              - "--exclude='*.md'"
+              - "--exclude='NOTICE'"
+              - "--exclude='LICENSE'"
+              - "--exclude='packer-maas'"
+
+        - name: "Ensure Packer plugins are installed"
+          ansible.builtin.command: "packer init {{ (packer_maas_dir, 'ubuntu') | path_join }}"
+          changed_when: false
+
+    - name: Build
+      ansible.builtin.command:
+        cmd: >
+          packer build
+          -var headless={{ headless | default('true') }}
+          -var rocm_release={{ rocm_release | default('6.2.2') }}
+          -var rocm_release_build={{ rocm_release_build | default('6.2.60202-1') }}
+          -only=qemu.rocm .
+        chdir: "{{ build_dir }}"
+        creates: "{{ (build_dir, 'ubuntu-rocm.dd.gz') | path_join }}" # avoid overwriting - require delete
+      vars:
+        build_dir: "{{ (packer_maas_dir, 'ubuntu') | path_join }}"
+      environment:
+        PACKER_LOG: '1'  # wanted as str

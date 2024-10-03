@@ -13,6 +13,12 @@ variable "rocm_release_build" {
   default = "6.2.60202-1"
 }
 
+variable "amdgpu_install" {
+  type = list(string)
+  default = ["amdgpu-dkms", "rocm"]
+  description = "The packages to install with Ansible [after installing 'amdgpu-install']"
+}
+
 packer {
   required_plugins {
     ansible = {

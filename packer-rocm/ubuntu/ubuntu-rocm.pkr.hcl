@@ -26,8 +26,8 @@ source "qemu" "rocm" {
   ssh_handshake_attempts = 500
   ssh_username           = "ubuntu"
   ssh_password           = var.ssh_ubuntu_password
-  ssh_wait_timeout       = var.timeout
-  ssh_timeout            = var.timeout
+  ssh_wait_timeout       = "1h"
+  ssh_timeout            = "1h"
   # debug/discard
   # ssh_pty = true
   # ssh_agent_auth = false
@@ -56,7 +56,8 @@ build {
       "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
       "--scp-extra-args", "'-O'",
       "-e", "rocm_release_build=${var.rocm_release_build}",  # pass ROCm requests
-      "-e", "rocm_release=${var.rocm_release}"
+      "-e", "rocm_release=${var.rocm_release}",
+      "-e", "amdgpu_install=${join(",", var.amdgpu_install)}"
     ]
   }
 
