@@ -56,7 +56,7 @@ type OriginOfCondition struct {
 func startListener(AppConfig Config, shutdownChan <-chan struct{}) {
 	var listener net.Listener
 	var err error
-	//TODO test with certificates
+
 	if AppConfig.SystemInformation.UseSSL {
 		cert, err := tls.LoadX509KeyPair(AppConfig.CertificateDetails.CertFile, AppConfig.CertificateDetails.KeyFile)
 		if err != nil {
@@ -72,12 +72,15 @@ func startListener(AppConfig Config, shutdownChan <-chan struct{}) {
 		log.Fatalf("Failed to bind to port: %v", err)
 	}
 
-	log.Printf("Listening on %s:%d via %s", AppConfig.SystemInformation.ListenerIP, AppConfig.SystemInformation.ListenerPort, func() string {
-		if AppConfig.SystemInformation.UseSSL {
-			return "HTTPS"
-		}
-		return "HTTP"
-	}())
+	log.Printf("Listening on %s:%d via %s",
+		AppConfig.SystemInformation.ListenerIP,
+		AppConfig.SystemInformation.ListenerPort,
+		func() string {
+			if AppConfig.SystemInformation.UseSSL {
+				return "HTTPS"
+			}
+			return "HTTP"
+		}())
 
 	go func() {
 		<-shutdownChan
@@ -101,20 +104,13 @@ func startListener(AppConfig Config, shutdownChan <-chan struct{}) {
 }
 
 func processData(AppConfig Config, conn net.Conn) {
-	var connStreamOut net.Conn
-
-	if AppConfig.SystemInformation.UseSSL {
-		connStreamOut = tls.Server(conn, AppConfig.context)
-	} else {
-		connStreamOut = conn
-	}
+	defer conn.Close()
 
 	// Ensure global variables are used
 	globalEventCount := &AppConfig.eventCount
 	globalDataBuffer := &AppConfig.dataBuffer
 
-	// Example of processing data (this part should be expanded based on actual requirements)
-	handleConnection(AppConfig, connStreamOut, globalEventCount, globalDataBuffer)
+	handleConnection(AppConfig, conn, globalEventCount, globalDataBuffer)
 }
 
 func handleConnection(AppConfig Config, conn net.Conn, eventCount *int, dataBuffer *[]byte) {
@@ -123,114 +119,123 @@ func handleConnection(AppConfig Config, conn net.Conn, eventCount *int, dataBuff
 	remote, _, err := net.SplitHostPort(remoteAddr)
 	if err != nil {
 		log.Printf("Error splitting host and port: %v", err)
+		remote = remoteAddr
 	}
-	log.Printf("Socket from " + remote + " connected")
+	log.Printf("Connection from %s connected", remote)
 	reader := bufio.NewReader(conn)
+
 	for {
 		// Read the HTTP request from the connection
 		req, err := http.ReadRequest(reader)
 		if err != nil {
 			if err != io.EOF {
 				log.Printf("Error reading from connection: %v", err)
-				sendErrorResponse(conn, req)
+				sendErrorResponse(conn, nil)
 			}
 			break
 		}
 
-		// Extract method, headers, and payload
-		method := req.Method
-		headers := req.Header
-		payload := make([]byte, req.ContentLength)
-		_, err = io.ReadFull(req.Body, payload)
+		err = processRequest(AppConfig, conn, req, eventCount, dataBuffer, remote)
 		if err != nil {
-			log.Printf("Error reading payload: %v", err)
+			log.Printf("Error processing request: %v", err)
 			sendErrorResponse(conn, req)
 			break
-		}
-		req.Body.Close()
-
-		// Log the extracted information
-		var eventType string
-
-		// Unmarshal the JSON payload into the struct
-		var p Payload
-		err = json.Unmarshal(payload, &p)
-		if err != nil {
-			log.Printf("Error unmarshaling JSON: %v", err)
-			sendErrorResponse(conn, req)
-			return
-		}
-		log.Printf("Method: %s", method)
-		log.Printf("Headers: %v", headers)
-		for _, event := range p.Events {
-			eventType = event.EventType
-			eventId := event.EventId
-			severity := event.Severity
-			message := event.Message
-			messageId := event.MessageId
-			messageArgs := event.MessageArgs
-			originOfCondition := event.OriginOfCondition.OdataId
-
-			log.Printf("Event Type: %s", eventType)
-			log.Printf("Event ID: %s", eventId)
-			log.Printf("Severity: %s", severity)
-			log.Printf("Message: %s", message)
-			log.Printf("Message ID: %s", messageId)
-			log.Printf("Message Args: %v", messageArgs)
-			log.Printf("Origin Of Condition: %s", originOfCondition)
-			for _, triggerEvent := range AppConfig.TriggerEvents {
-				if eventType == triggerEvent.EventType && eventId == triggerEvent.EventId && severity == triggerEvent.Severity {
-					log.Printf("Matched Trigger Event: %+v", triggerEvent)
-					//TODO add the slurm integration here
-					break
-				}
-			}
-		}
-
-		// Get the current Unix timestamp
-		timestamp := float64(time.Now().Unix())
-		// Append data to dataBuffer and increment eventCount
-		*dataBuffer = append(*dataBuffer, payload...)
-		*eventCount++
-		eventCountMetric.WithLabelValues(remote, eventType).Inc()
-		eventProcessingTimeMetric.WithLabelValues(remote, eventType).Set(timestamp)
-		response := &http.Response{
-			Status:        "200 OK",
-			StatusCode:    http.StatusOK,
-			Proto:         req.Proto,
-			ProtoMajor:    req.ProtoMajor,
-			ProtoMinor:    req.ProtoMinor,
-			Header:        make(http.Header),
-			Body:          io.NopCloser(bytes.NewBufferString("OK")),
-			ContentLength: int64(len("OK")),
-		}
-		response.Header.Set("Content-Type", "text/plain")
-		err = response.Write(conn)
-		if err != nil {
-			log.Printf("Error writing response: %v", err)
 		}
 		break
 	}
 }
 
-type StreamOutput struct {
-	Method  string
-	Headers map[string]string
-	Payload string
+func processRequest(AppConfig Config, conn net.Conn, req *http.Request, eventCount *int, dataBuffer *[]byte, remote string) error {
+	// Extract method, headers, and payload
+	method := req.Method
+	headers := req.Header
+
+	// Read the payload
+	payload, err := io.ReadAll(req.Body)
+	if err != nil {
+		return fmt.Errorf("error reading payload: %w", err)
+	}
+	req.Body.Close()
+
+	// Unmarshal the JSON payload into the struct
+	var p Payload
+	err = json.Unmarshal(payload, &p)
+	if err != nil {
+		return fmt.Errorf("error unmarshaling JSON: %w", err)
+	}
+
+	// Log the extracted information
+	var eventType string
+	log.Printf("Method: %s", method)
+	log.Printf("Headers: %v", headers)
+	for _, event := range p.Events {
+		eventType = event.EventType
+		eventId := event.EventId
+		severity := event.Severity
+		message := event.Message
+		messageId := event.MessageId
+		messageArgs := event.MessageArgs
+		originOfCondition := event.OriginOfCondition.OdataId
+
+		log.Printf("Event Type: %s", eventType)
+		log.Printf("Event ID: %s", eventId)
+		log.Printf("Severity: %s", severity)
+		log.Printf("Message: %s", message)
+		log.Printf("Message ID: %s", messageId)
+		log.Printf("Message Args: %v", messageArgs)
+		log.Printf("Origin Of Condition: %s", originOfCondition)
+		for _, triggerEvent := range AppConfig.TriggerEvents {
+			if eventType == triggerEvent.EventType && eventId == triggerEvent.EventId && severity == triggerEvent.Severity {
+				log.Printf("Matched Trigger Event: %+v", triggerEvent)
+				// TODO: Add the SLURM integration here
+				break
+			}
+		}
+	}
+
+	// Append data to dataBuffer and increment eventCount
+	*dataBuffer = append(*dataBuffer, payload...)
+	*eventCount++
+
+	// Update metrics using variables from metrics.go
+	timestamp := float64(time.Now().Unix())
+	eventCountMetric.WithLabelValues(remote, eventType).Inc()
+	eventProcessingTimeMetric.WithLabelValues(remote, eventType).Set(timestamp)
+
+	// Send a 200 OK response
+	response := &http.Response{
+		Status:        "200 OK",
+		StatusCode:    http.StatusOK,
+		Proto:         req.Proto,
+		ProtoMajor:    req.ProtoMajor,
+		ProtoMinor:    req.ProtoMinor,
+		Header:        make(http.Header),
+		Body:          io.NopCloser(bytes.NewBufferString("OK")),
+		ContentLength: int64(len("OK")),
+	}
+	response.Header.Set("Content-Type", "text/plain")
+	err = response.Write(conn)
+	if err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
+	return nil
 }
 
 func sendErrorResponse(conn net.Conn, req *http.Request) {
 	response := &http.Response{
 		Status:        "500 Internal Server Error",
 		StatusCode:    http.StatusInternalServerError,
-		Proto:         req.Proto,
-		ProtoMajor:    req.ProtoMajor,
-		ProtoMinor:    req.ProtoMinor,
+		Proto:         "HTTP/1.1",
 		Header:        make(http.Header),
 		Body:          io.NopCloser(bytes.NewBufferString("Internal Server Error")),
 		ContentLength: int64(len("Internal Server Error")),
 	}
 	response.Header.Set("Content-Type", "text/plain")
+	if req != nil {
+		response.Proto = req.Proto
+		response.ProtoMajor = req.ProtoMajor
+		response.ProtoMinor = req.ProtoMinor
+	}
 	err := response.Write(conn)
 	if err != nil {
 		log.Printf("Error writing error response: %v", err)
