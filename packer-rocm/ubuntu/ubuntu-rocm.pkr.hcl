@@ -26,8 +26,8 @@ source "qemu" "rocm" {
   ssh_handshake_attempts = 500
   ssh_username           = "ubuntu"
   ssh_password           = var.ssh_ubuntu_password
-  ssh_wait_timeout       = var.timeout
-  ssh_timeout            = var.timeout
+  ssh_wait_timeout       = "1h"
+  ssh_timeout            = "1h"
   # debug/discard
   # ssh_pty = true
   # ssh_agent_auth = false
