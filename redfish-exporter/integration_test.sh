@@ -1,3 +1,4 @@
+
 #!/bin/bash
 set -e
 
@@ -22,10 +23,13 @@ cleanup() {
     echo "Stopping and removing Docker containers..."
     docker stop integration-test1 integration-test2 || true
     docker rm integration-test1 integration-test2 || true
+
+    # Remove generated certificates
+    rm -rf ./certs
 }
 trap cleanup EXIT
 
-docker rm -f integration-test1 integration-test2 2>/dev/null
+docker rm -f integration-test1 integration-test2 2>/dev/null || true
 
 log "Starting mock Redfish servers..."
 docker run -d --name integration-test1 -p 8000:8000 dmtf/redfish-mockup-server:latest --port=8000 >/dev/null
@@ -56,12 +60,25 @@ done
 log "Building AMD Redfish Exporter..."
 go build -o amd-redfish-exporter
 
-log "Starting AMD Redfish Exporter..."
+# Generate self-signed certificate for testing TLS
+CERT_DIR="./certs"
+mkdir -p $CERT_DIR
+CERT_FILE="$CERT_DIR/server.crt"
+KEY_FILE="$CERT_DIR/server.key"
+
+if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
+    log "Generating self-signed certificate for TLS..."
+    openssl req -x509 -newkey rsa:2048 -keyout $KEY_FILE -out $CERT_FILE -days 1 -nodes -subj "/CN=localhost"
+fi
+
+log "Starting AMD Redfish Exporter with TLS..."
 LISTENER_IP=0.0.0.0 \
-LISTENER_PORT=8080 \
-USE_SSL=false \
+LISTENER_PORT=8443 \
+USE_SSL=true \
+CERTFILE=$CERT_FILE \
+KEYFILE=$KEY_FILE \
 SERVERS='[{"ip":"http://localhost:8000","username":"root","password":"password","loginType":"basic"},{"ip":"http://localhost:8001","username":"root","password":"password","loginType":"basic"}]' \
-SUBSCRIPTION_PAYLOAD='{"Destination":"http://localhost:8080","EventTypes":["Alert","ResourceRemoved","ResourceAdded","ResourceUpdated","StatusChange"],"Context":"IntegrationTest","Protocol":"Redfish"}' \
+SUBSCRIPTION_PAYLOAD='{"Destination":"https://localhost:8443","EventTypes":["Alert","ResourceRemoved","ResourceAdded","ResourceUpdated","StatusChange"],"Context":"IntegrationTest","Protocol":"Redfish"}' \
 ./amd-redfish-exporter &
 
 EXPORTER_PID=$!
@@ -76,21 +93,23 @@ for i in {1..30}; do
     sleep 1
 done
 
-log "Sending a test event to the AMD Redfish Exporter..."
-curl -s -X POST http://localhost:8080 \
+log "Sending a test event to the AMD Redfish Exporter over HTTPS..."
+curl -k -s -X POST https://localhost:8443 \
      -H "Content-Type: application/json" \
      -d '{
-         "EventType": "Alert",
-         "EventId": "TestEvent",
-         "EventTimestamp": "2023-09-30T12:00:00Z",
-         "Severity": "OK",
-         "Message": "Test event",
-         "MessageId": "TestEvent.1.0.TestMessage",
-         "Context": "IntegrationTest"
+         "Events": [{
+             "EventType": "Alert",
+             "EventId": "TestEvent",
+             "EventTimestamp": "2023-09-30T12:00:00Z",
+             "Severity": "OK",
+             "Message": "Test event",
+             "MessageId": "TestEvent.1.0.TestMessage",
+             "Context": "IntegrationTest"
+         }]
      }' >/dev/null
 
 log "Waiting for metrics to update..."
-sleep 15
+sleep 5
 
 log "Checking Prometheus metrics..."
 metrics=$(curl -s http://localhost:2112/metrics)
@@ -109,3 +128,4 @@ check_metric "RedFishEvents_recieved"
 check_metric "RedFishEvents_processing_time"
 
 log "Integration test completed successfully"
+
