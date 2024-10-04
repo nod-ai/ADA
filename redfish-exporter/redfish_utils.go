@@ -155,7 +155,7 @@ func CreateSubscriptionsForAllServers(redfishServers []RedfishServer, subscripti
 // Delete all event subscriptions stored in the map
 func DeleteSubscriptionsFromAllServers(redfishServers []RedfishServer, subscriptionMap map[string]string) {
 	for serverIP, subscriptionURI := range subscriptionMap {
-		server := getServerCredentials(redfishServers, serverIP)
+		server := getServerInfo(redfishServers, serverIP)
 		err := deleteSubscriptionFromServer(server, subscriptionURI)
 		if err != nil {
 			log.Printf("Failed to delete event subscription on server %s: %v", server.IP, err)
@@ -190,7 +190,7 @@ func deleteSubscriptionFromServer(server RedfishServer, subscriptionURI string) 
 }
 
 // Retrieve the server's credentials from the config based on IP
-func getServerCredentials(redfishServers []RedfishServer, serverIP string) RedfishServer {
+func getServerInfo(redfishServers []RedfishServer, serverIP string) RedfishServer {
 	for _, redfishServer := range redfishServers {
 		if redfishServer.IP == serverIP {
 			return redfishServer

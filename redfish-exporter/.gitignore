@@ -7,6 +7,8 @@
 node_modules/
 dist/
 
+api/generated/slurmrestdapi
+
 # Compiled Java class files
 *.class
 

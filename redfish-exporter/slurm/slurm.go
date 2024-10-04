@@ -13,7 +13,6 @@ import (
 const (
 	slurmRestClientTimeout = time.Minute * 5
 	defaultScript          = "#!/bin/bash\n"
-	tempBearerToken        = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjI3Mjc5MDQ3OTcsImlhdCI6MTcyNzkwNDc5Nywic3VuIjoicm9vdCJ9.tG9hGTkQCSrIx50rN_CgU6EZUr28zlXy65HuQW3BB3k"
 )
 
 type SlurmServerConfig struct {
