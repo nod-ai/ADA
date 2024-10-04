@@ -160,7 +160,7 @@ func DeleteSubscriptionsFromAllServers(redfishServers []RedfishServer, subscript
 		if err != nil {
 			log.Printf("Failed to delete event subscription on server %s: %v", server.IP, err)
 		} else {
-			log.Printf("Successfully deleted event subscription from server %s", server.IP)
+			log.Printf("Successfully deleted event subscription from server %s: %s", server.IP, subscriptionURI)
 		}
 	}
 }

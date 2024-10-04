@@ -79,7 +79,7 @@ func (s *Server) Start(AppConfig Config) error {
 	}
 
 	if err != nil {
-		log.Fatalf("Failed to bind to port: %v", err)
+		log.Printf("Failed to bind to port: %v", err)
 		return err
 	}
 
