@@ -18,7 +18,7 @@ source "qemu" "rocm" {
   boot_command    = ["<wait5>e<wait2>", "<down><down><down><end><wait>", "<bs><bs><bs><bs><wait>autoinstall ---<wait><f10>"]
   boot_wait       = "5s"
   efi_boot        = true
-  efi_drop_efivars = true
+  efi_drop_efivars = true  # don't place efivars.fd in output artifact
   format          = "raw"
   headless        = var.headless
   http_directory  = var.http_directory

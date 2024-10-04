@@ -28,6 +28,8 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/nod-ai/ADA/redfish-exporter/slurm"
 )
 
 // Define a struct that matches the JSON structure
@@ -59,13 +61,15 @@ type Server struct {
 	listenPort   string
 	listener     net.Listener
 	shutdownChan chan struct{}
+	slurmQueue   *slurm.SlurmQueue
 }
 
-func NewServer(listenIP string, listenPort string) *Server {
+func NewServer(listenIP string, listenPort string, slurmQueue *slurm.SlurmQueue) *Server {
 	return &Server{
 		listenIP:     listenIP,
 		listenPort:   listenPort,
 		shutdownChan: make(chan struct{}),
+		slurmQueue:   slurmQueue,
 	}
 }
 
@@ -157,7 +161,7 @@ func (s *Server) handleConnection(AppConfig Config, conn net.Conn) {
 			break
 		}
 
-		err = processRequest(AppConfig, conn, req, eventCount, dataBuffer)
+		err = s.processRequest(AppConfig, conn, req, eventCount, dataBuffer)
 		if err != nil {
 			log.Printf("Error processing request: %v", err)
 			sendErrorResponse(conn, req)
@@ -166,10 +170,16 @@ func (s *Server) handleConnection(AppConfig Config, conn net.Conn) {
 	}
 }
 
-func processRequest(AppConfig Config, conn net.Conn, req *http.Request, eventCount *int, dataBuffer *[]byte) error {
+func (s *Server) processRequest(AppConfig Config, conn net.Conn, req *http.Request, eventCount *int, dataBuffer *[]byte) error {
 	// Extract method, headers, and payload
 	method := req.Method
 	headers := req.Header
+
+	// Extract the remote IP address
+	ip, _, err := net.SplitHostPort(conn.RemoteAddr().String())
+	if err != nil {
+		ip = conn.RemoteAddr().String() // Fallback to full address if splitting fails
+	}
 
 	// Read the payload
 	payload, err := io.ReadAll(req.Body)
@@ -206,10 +216,13 @@ func processRequest(AppConfig Config, conn net.Conn, req *http.Request, eventCou
 		log.Printf("Message Args: %v", messageArgs)
 		log.Printf("Origin Of Condition: %s", originOfCondition)
 		for _, triggerEvent := range AppConfig.TriggerEvents {
-			if eventType == triggerEvent.EventType && eventId == triggerEvent.EventId && severity == triggerEvent.Severity {
+			if eventId == triggerEvent.EventId {
 				log.Printf("Matched Trigger Event: %s with action %s", triggerEvent.EventId, triggerEvent.Action)
-				// TODO: Add the SLURM integration here
 				// Sending event belings to redfish_utils. Each server may have different slurm node associated, and redfish_servers has the info/map.
+				if s.slurmQueue != nil {
+					redfishServerInfo := getServerInfo(AppConfig.RedfishServers, fmt.Sprintf("https://%v", ip))
+					s.slurmQueue.Add(triggerEvent.Action, redfishServerInfo.SlurmNode)
+				}
 				break
 			}
 		}
@@ -218,12 +231,6 @@ func processRequest(AppConfig Config, conn net.Conn, req *http.Request, eventCou
 	// Append data to dataBuffer and increment eventCount
 	*dataBuffer = append(*dataBuffer, payload...)
 	*eventCount++
-
-	// Extract the IP address
-	ip, _, err := net.SplitHostPort(conn.RemoteAddr().String())
-	if err != nil {
-		ip = conn.RemoteAddr().String() // Fallback to full address if splitting fails
-	}
 
 	// Update metrics using variables from metrics.go
 	timestamp := float64(time.Now().Unix())

@@ -2,8 +2,11 @@ module silogen/scrapefish
 
 go 1.23.1
 
+replace github.com/nod-ai/ADA/redfish-exporter => ./
+
 require (
 	github.com/joho/godotenv v1.5.1
+	github.com/nod-ai/ADA/redfish-exporter v0.0.0-20241002210630-2ef2d1070d90
 	github.com/prometheus/client_golang v1.20.4
 	github.com/stmcginnis/gofish v0.19.0
 )

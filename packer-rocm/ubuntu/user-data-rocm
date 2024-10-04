@@ -6,9 +6,45 @@ autoinstall:
     username: ubuntu
     password: "$6$5OcQlL5Sfjzsczoq$i8LnaFro3xOZ8mZ258DYtGMeWymBdLHts37F7LS.eV4SGe8cGWGWbcHQ/423aijQgMCGIKLMvEQCHpD2pSPKV0"
   packages:
-    - "ansible"  # supports potential use of the ansible-local provisioner
-    - "python3.10-venv"  # pull venv+secondary executables
+    # support potential use of the ansible-local provisioner
+    - "ansible"
+    # pull venv+secondary Python executables
+    - "python3.10-venv"
     - "python3.11-venv"
+    # suggested packages
+    - "ffmpeg"
+    - "foot-terminfo"
+    - "kitty-terminfo"
+    - "libavcodec-dev"
+    - "libavformat-dev"
+    - "libavutil-dev"
+    - "libdrm-amdgpu1"
+    - "libdrm-dev"
+    - "libdrm2"
+    - "libelf-dev"
+    - "libelf1"
+    - "libexpat1"
+    - "libfile-copy-recursive-perl"
+    - "libfile-listing-perl"
+    - "libfile-which-perl"
+    - "libmpfr6"
+    - "libnuma-dev"
+    - "libnuma1"
+    - "libpython3.10"
+    - "libstdc++-11-dev"
+    - "libswscale-dev"
+    - "libtbb-dev"
+    - "libtinfo-dev"
+    - "liburi-perl"
+    - "libxml2-dev"
+    - "mesa-common-dev"
+    - "pci.ids"
+    - "pciutils"
+    - "python3-pip"
+    - "python3-setuptools"
+    - "python3-wheel"
+    - "python3-yaml"
+    - "rsync"
   keyboard:
     layout: us
     variant: ''

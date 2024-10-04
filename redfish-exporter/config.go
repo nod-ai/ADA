@@ -26,6 +26,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const (
+	DefaultListenerPort = "8080"
+	DefaultMetricsPort  = "2112"
+	DefaultUseSSL       = "false"
+)
+
 type Config struct {
 	Information struct {
 		Updated     string
@@ -38,10 +44,11 @@ type Config struct {
 		MetricsPort  int
 	}
 	CertificateDetails struct {
-		CertFile   string
-		KeyFile    string
-		SlurmToken string
+		CertFile string
+		KeyFile  string
 	}
+	SlurmToken          string
+	SlurmControlNode    string
 	SubscriptionPayload SubscriptionPayload
 	RedfishServers      []RedfishServer
 	TriggerEvents       []TriggerEvent
@@ -51,17 +58,9 @@ type Config struct {
 }
 
 type TriggerEvent struct {
-	EventId   string `json:"EventId"`
-	EventType string `json:"EventType"`
-	Severity  string `json:"Severity"`
-	Action    string `json:"Action"`
+	EventId string `json:"EventId"`
+	Action  string `json:"Action"`
 }
-
-const (
-	DefaultListenerPort = "8080"
-	DefaultMetricsPort  = "2112"
-	DefaultUseSSL       = "false"
-)
 
 func setupConfig() Config {
 	// Load .env file
@@ -108,7 +107,9 @@ func setupConfig() Config {
 
 	AppConfig.CertificateDetails.CertFile = os.Getenv("CERTFILE")
 	AppConfig.CertificateDetails.KeyFile = os.Getenv("KEYFILE")
-	AppConfig.CertificateDetails.SlurmToken = os.Getenv("SLURM_TOKEN")
+
+	AppConfig.SlurmToken = os.Getenv("SLURM_TOKEN")
+	AppConfig.SlurmControlNode = os.Getenv("SLURM_CONTROL_NODE")
 
 	subscriptionPayloadJSON := os.Getenv("SUBSCRIPTION_PAYLOAD")
 	if err := json.Unmarshal([]byte(subscriptionPayloadJSON), &AppConfig.SubscriptionPayload); err != nil {
