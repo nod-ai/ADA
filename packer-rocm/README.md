@@ -22,6 +22,8 @@ Clone and run with `ansible-pull`:
 ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml
 ```
 
+The _Packer_ variables in [I/O](#io) apply with _Ansible_ as well: `-e ...`
+
 ### Manual
 
 1. Clone repositories:
@@ -53,6 +55,7 @@ ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.ym
 
     # Build
     PACKER_LOG=1 packer build \
+        -var kernel=linux-generic \
         -var rocm_release=6.2.2 \
         -var rocm_release_build=6.2.60202-1 \
         -var amdgpu_install='["amdgpu-dkms", "rocm", "mesa-amdgpu-va-drivers"]' \
@@ -64,11 +67,14 @@ ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.ym
 The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it may be here:  
 `~/.ansible/pull/$HOSTNAME/packer-rocm/packer-maas/ubuntu`
 
-These _Packer_ variables are optional, defaults are shown:
+These _Packer_ variables are optional:
 
 * `rocm_release`
 * `rocm_release_build`
 * `amdgpu_install`
+* `kernel`
+  * Defaults to `linux-generic` when building with _Ansible_
+  * When building manually *[and not specified]*, left out of the image artifact. Provided at install time by _MaaS_
 
 #### Proxy
 

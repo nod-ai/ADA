@@ -34,6 +34,7 @@
       ansible.builtin.command:
         cmd: >
           packer build
+          -var kernel={{ kernel | default('linux-generic') }}
           -var headless={{ headless | default('true') }}
           -var rocm_release={{ rocm_release | default('6.2.2') }}
           -var rocm_release_build={{ rocm_release_build | default('6.2.60202-1') }}
