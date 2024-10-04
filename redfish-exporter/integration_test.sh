@@ -13,19 +13,22 @@ log "Starting integration test setup..."
 
 cleanup() {
     echo "Cleaning up..."
-    
+
     if [ ! -z "$EXPORTER_PID" ]; then
         echo "Shutting down AMD Redfish Exporter..."
         kill -SIGINT $EXPORTER_PID
         wait $EXPORTER_PID 2>/dev/null
     fi
-    
+
     echo "Stopping and removing Docker containers..."
     docker stop integration-test1 integration-test2 || true
     docker rm integration-test1 integration-test2 || true
 
     # Remove generated certificates
     rm -rf ./certs
+
+    # Remove exporter binary
+    rm -f amd-redfish-exporter
 }
 trap cleanup EXIT
 

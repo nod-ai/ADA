@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -53,28 +54,42 @@ type OriginOfCondition struct {
 	OdataId string `json:"@odata.id"`
 }
 
-func startListener(AppConfig Config, shutdownChan <-chan struct{}) {
-	var listener net.Listener
-	var err error
+type Server struct {
+	listenIP     string
+	listenPort   string
+	listener     net.Listener
+	shutdownChan chan struct{}
+}
 
+func NewServer(listenIP string, listenPort string) *Server {
+	return &Server{
+		listenIP:     listenIP,
+		listenPort:   listenPort,
+		shutdownChan: make(chan struct{}),
+	}
+}
+
+func (s *Server) Start(AppConfig Config) error {
+	var err error
+	var listener net.Listener
 	if AppConfig.SystemInformation.UseSSL {
-		cert, err := tls.LoadX509KeyPair(AppConfig.CertificateDetails.CertFile, AppConfig.CertificateDetails.KeyFile)
-		if err != nil {
-			log.Fatalf("Failed to load certificates: %v", err)
-		}
-		config := &tls.Config{Certificates: []tls.Certificate{cert}}
-		listener, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", AppConfig.SystemInformation.ListenerIP, AppConfig.SystemInformation.ListenerPort), config)
+		listener, err = s.startTLS(AppConfig.CertificateDetails.CertFile, AppConfig.CertificateDetails.KeyFile)
 	} else {
-		listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", AppConfig.SystemInformation.ListenerIP, AppConfig.SystemInformation.ListenerPort))
+		listener, err = s.startWithoutTLS()
 	}
 
 	if err != nil {
 		log.Fatalf("Failed to bind to port: %v", err)
+		return err
 	}
 
-	log.Printf("Listening on %s:%d via %s",
-		AppConfig.SystemInformation.ListenerIP,
-		AppConfig.SystemInformation.ListenerPort,
+	s.listener = listener // Store the listener in the Server struct
+
+	go s.acceptLoop(AppConfig)
+
+	log.Printf("Listening on %s:%s via %s",
+		s.listenIP,
+		s.listenPort,
 		func() string {
 			if AppConfig.SystemInformation.UseSSL {
 				return "HTTPS"
@@ -82,46 +97,53 @@ func startListener(AppConfig Config, shutdownChan <-chan struct{}) {
 			return "HTTP"
 		}())
 
-	go func() {
-		<-shutdownChan
-		log.Println("Shutting down listener...")
-		listener.Close()
-	}()
+	<-s.shutdownChan
+	log.Println("Shutting down listener...")
+	listener.Close()
+	return nil
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			select {
-			case <-shutdownChan:
-				return
-			default:
-				log.Printf("Failed to accept connection: %v", err)
-				continue
-			}
-		}
-		go processData(AppConfig, conn)
-	}
 }
 
-func processData(AppConfig Config, conn net.Conn) {
-	defer conn.Close()
-
-	// Ensure global variables are used
-	globalEventCount := &AppConfig.eventCount
-	globalDataBuffer := &AppConfig.dataBuffer
-
-	handleConnection(AppConfig, conn, globalEventCount, globalDataBuffer)
-}
-
-func handleConnection(AppConfig Config, conn net.Conn, eventCount *int, dataBuffer *[]byte) {
-	defer conn.Close()
-	remoteAddr := conn.RemoteAddr().String()
-	remote, _, err := net.SplitHostPort(remoteAddr)
+func (s *Server) startTLS(certFile, keyFile string) (net.Listener, error) {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		log.Printf("Error splitting host and port: %v", err)
-		remote = remoteAddr
+		log.Println("Failed to load certificates")
+		return nil, err
 	}
-	log.Printf("Connection from %s connected", remote)
+	config := &tls.Config{Certificates: []tls.Certificate{cert}}
+	return tls.Listen("tcp", fmt.Sprintf("%s:%s", s.listenIP, s.listenPort), config)
+}
+
+func (s *Server) startWithoutTLS() (net.Listener, error) {
+	return net.Listen("tcp", fmt.Sprintf("%s:%s", s.listenIP, s.listenPort))
+}
+
+func (s *Server) acceptLoop(AppConfig Config) {
+	for {
+		conn, err := s.listener.Accept()
+		if err != nil {
+			// Check if the error is due to the listener being closed
+			if errors.Is(err, net.ErrClosed) {
+				log.Println("Listener closed, stopping accept loop")
+				break
+			}
+			log.Printf("Failed to accept connection: %v", err)
+			continue
+		}
+
+		log.Printf("Connection from %s connected", conn.RemoteAddr())
+
+		go s.handleConnection(AppConfig, conn)
+	}
+
+}
+
+func (s *Server) handleConnection(AppConfig Config, conn net.Conn) {
+	defer conn.Close()
+
+	eventCount := &AppConfig.eventCount
+	dataBuffer := &AppConfig.dataBuffer
+
 	reader := bufio.NewReader(conn)
 
 	for {
@@ -135,17 +157,16 @@ func handleConnection(AppConfig Config, conn net.Conn, eventCount *int, dataBuff
 			break
 		}
 
-		err = processRequest(AppConfig, conn, req, eventCount, dataBuffer, remote)
+		err = processRequest(AppConfig, conn, req, eventCount, dataBuffer)
 		if err != nil {
 			log.Printf("Error processing request: %v", err)
 			sendErrorResponse(conn, req)
 			break
 		}
-		break
 	}
 }
 
-func processRequest(AppConfig Config, conn net.Conn, req *http.Request, eventCount *int, dataBuffer *[]byte, remote string) error {
+func processRequest(AppConfig Config, conn net.Conn, req *http.Request, eventCount *int, dataBuffer *[]byte) error {
 	// Extract method, headers, and payload
 	method := req.Method
 	headers := req.Header
@@ -198,10 +219,16 @@ func processRequest(AppConfig Config, conn net.Conn, req *http.Request, eventCou
 	*dataBuffer = append(*dataBuffer, payload...)
 	*eventCount++
 
+	// Extract the IP address
+	ip, _, err := net.SplitHostPort(conn.RemoteAddr().String())
+	if err != nil {
+		ip = conn.RemoteAddr().String() // Fallback to full address if splitting fails
+	}
+
 	// Update metrics using variables from metrics.go
 	timestamp := float64(time.Now().Unix())
-	eventCountMetric.WithLabelValues(remote, eventType).Inc()
-	eventProcessingTimeMetric.WithLabelValues(remote, eventType).Set(timestamp)
+	eventCountMetric.WithLabelValues(ip, eventType).Inc()
+	eventProcessingTimeMetric.WithLabelValues(ip, eventType).Set(timestamp)
 
 	// Send a 200 OK response
 	response := &http.Response{

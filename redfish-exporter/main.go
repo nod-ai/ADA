@@ -38,9 +38,6 @@ func main() {
 	// Log the initialized config
 	log.Printf("Initialized Config: %+v", AppConfig)
 
-	// Channel to signal shutdown
-	shutdownChan := make(chan struct{})
-
 	// Subscribe the listener to the event stream for all servers
 	subscriptionMap, err := CreateSubscriptionsForAllServers(AppConfig.RedfishServers, AppConfig.SubscriptionPayload)
 	if err != nil {
@@ -49,7 +46,12 @@ func main() {
 	}
 
 	// Start the listener
-	go startListener(AppConfig, shutdownChan)
+	listener := NewServer(AppConfig.SystemInformation.ListenerIP, AppConfig.SystemInformation.ListenerPort)
+	go func() {
+		if err := listener.Start(AppConfig); err != nil {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
 
 	http.Handle("/metrics", promhttp.Handler())
 	go func() {
@@ -69,7 +71,7 @@ func main() {
 	log.Println("Received shutdown signal. Closing listener...")
 
 	// Signal shutdown to all components
-	close(shutdownChan)
+	close(listener.shutdownChan)
 
 	// Give some time for the listener to close gracefully
 	time.Sleep(time.Second)
