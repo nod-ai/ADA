@@ -45,11 +45,16 @@ func main() {
 		log.Fatalf("Failed to create subscriptions: %v", err)
 	}
 
+	// Set up signal handling
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
 	// Start the listener
 	listener := NewServer(AppConfig.SystemInformation.ListenerIP, AppConfig.SystemInformation.ListenerPort)
 	go func() {
 		if err := listener.Start(AppConfig); err != nil {
-			log.Fatalf("Server error: %v", err)
+			log.Printf("Server error: %v", err)
+			close(sigChan)
 		}
 	}()
 
@@ -61,10 +66,6 @@ func main() {
 			log.Printf("Metrics server error: %v", err)
 		}
 	}()
-
-	// Set up signal handling
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// Wait for shutdown signal
 	<-sigChan
