@@ -33,7 +33,7 @@ type Config struct {
 	}
 	SystemInformation struct {
 		ListenerIP   string
-		ListenerPort int
+		ListenerPort string
 		UseSSL       bool
 		MetricsPort  int
 	}
@@ -79,13 +79,9 @@ func setupConfig() Config {
 	AppConfig.SystemInformation.ListenerIP = os.Getenv("LISTENER_IP")
 
 	// Read and parse LISTENER_PORT with a default value
-	listenerPortStr := os.Getenv("LISTENER_PORT")
-	if listenerPortStr == "" {
-		listenerPortStr = DefaultListenerPort
-	}
-	listenerPort, err := strconv.Atoi(listenerPortStr)
-	if err != nil {
-		log.Fatalf("Failed to parse LISTENER_PORT: %v", err)
+	listenerPort := os.Getenv("LISTENER_PORT")
+	if listenerPort == "" {
+		listenerPort = DefaultListenerPort
 	}
 	AppConfig.SystemInformation.ListenerPort = listenerPort
 
