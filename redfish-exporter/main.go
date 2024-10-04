@@ -17,18 +17,27 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/nod-ai/ADA/redfish-exporter/slurm"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
+	var (
+		enableSlurm = flag.Bool("enable-slurm", false, "Enable slurm")
+	)
+	flag.Parse()
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Println("Starting Redfish Event Listener/Exporter")
 
@@ -37,6 +46,25 @@ func main() {
 
 	// Log the initialized config
 	log.Printf("Initialized Config: %+v", AppConfig)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var slurmQueue *slurm.SlurmQueue
+	if *enableSlurm {
+		if len(strings.TrimSpace(AppConfig.SlurmToken)) == 0 {
+			log.Fatalf("Provide slurm token to enable slurm")
+		}
+		if len(strings.TrimSpace(AppConfig.SlurmControlNode)) == 0 {
+			log.Fatalf("Provide slurm control node IP:Port to enable slurm")
+		}
+		_, err := slurm.NewClient(AppConfig.SlurmControlNode, AppConfig.SlurmToken)
+		if err != nil {
+			log.Fatalf("failed to create slurm client, err: %+v", err)
+		}
+
+		slurmQueue = slurm.InitSlurmQueue(ctx)
+		go slurmQueue.ProcessEventActionQueue()
+	}
 
 	// Subscribe the listener to the event stream for all servers
 	subscriptionMap, err := CreateSubscriptionsForAllServers(AppConfig.RedfishServers, AppConfig.SubscriptionPayload)
@@ -50,7 +78,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start the listener
-	listener := NewServer(AppConfig.SystemInformation.ListenerIP, AppConfig.SystemInformation.ListenerPort)
+	listener := NewServer(AppConfig.SystemInformation.ListenerIP, AppConfig.SystemInformation.ListenerPort, slurmQueue)
 	go func() {
 		if err := listener.Start(AppConfig); err != nil {
 			log.Printf("Server error: %v", err)
@@ -80,6 +108,10 @@ func main() {
 	// Unsubscribe the listener from all servers
 	log.Println("Unsubscribing from servers...")
 	DeleteSubscriptionsFromAllServers(AppConfig.RedfishServers, subscriptionMap)
+
+	cancel()
+
+	time.Sleep(time.Second)
 
 	// Perform any additional shutdown steps here
 	log.Println("Shutdown complete")
