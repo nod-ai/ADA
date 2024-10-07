@@ -15,6 +15,12 @@ variable "rocm_extras" {
   description = "Comma-separated string of extra packages to install [after 'amdgpu-dkms' and ROCm releases]"
 }
 
+variable "rocm_builder_disk" {
+  type = string
+  default = "70G"
+  description = "amdgpu and ROCm releases demand considerable space. Layout in 'user-data-rocm' will claim all of this"
+}
+
 packer {
   required_plugins {
     ansible = {
