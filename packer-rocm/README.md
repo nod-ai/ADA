@@ -19,10 +19,10 @@ project.
 Clone and run with `ansible-pull`:
 
 ```shell
-ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml
+ansible-pull -U https://github.com/nod-ai/ADA.git \
+     packer-rocm/playbooks/build.yml \
+     [-e rocm_releases=6.2.2,..]  # optional
 ```
-
-The _Packer_ variables in [I/O](#io) apply with _Ansible_ as well: `-e ...`
 
 ### Manual
 
@@ -56,9 +56,8 @@ The _Packer_ variables in [I/O](#io) apply with _Ansible_ as well: `-e ...`
     # Build
     PACKER_LOG=1 packer build \
         -var kernel=linux-generic \
-        -var rocm_release=6.2.2 \
-        -var rocm_release_build=6.2.60202-1 \
-        -var amdgpu_install='["amdgpu-dkms", "rocm", "mesa-amdgpu-va-drivers"]' \
+        -var rocm_releases="6.2.2,6.2.1" \
+        -var amdgpu_install='["mesa-amdgpu-va-drivers"]' \
         -only=qemu.rocm .
     ```
 
@@ -69,8 +68,7 @@ The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it
 
 These _Packer_ variables are optional:
 
-* `rocm_release`
-* `rocm_release_build`
+* `rocm_releases`
 * `amdgpu_install`
 * `kernel`
   * Defaults to `linux-generic` when building with _Ansible_

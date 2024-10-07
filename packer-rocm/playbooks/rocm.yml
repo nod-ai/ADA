@@ -1,46 +1,117 @@
 ---
 # Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
 # yamllint disable rule:line-length
-- name: "ROCm {{ rocm_release + '-' + rocm_release_build }}"  # expected from Packer or extra-vars
+- name: "Prepare amdgpu-dkms + ROCm"
   hosts: default
   become: true
   environment:  # may be superfluous; mapped through Packer HCL with 'ansible_env_vars'
-    http_proxy: "{{ lookup('ansible.builtin.env', 'http_proxy', default=Undefined) }}"
-    https_proxy: "{{ lookup('ansible.builtin.env', 'https_proxy', default=Undefined) }}"
-    no_proxy: "{{ lookup('ansible.builtin.env', 'no_proxy', default=Undefined) }}"
+    http_proxy: "{{ lookup('ansible.builtin.env', 'http_proxy') | default(omit) }}"
+    https_proxy: "{{ lookup('ansible.builtin.env', 'https_proxy') | default(omit) }}"
+    no_proxy: "{{ lookup('ansible.builtin.env', 'no_proxy') | default(omit) }}"
   vars:
-    rocm_amdgpu_pkg:
-      debian: "https://repo.radeon.com/amdgpu-install/{{ rocm_release }}/{{ ansible_distribution | lower }}/{{ ansible_distribution_release | lower }}/amdgpu-install_{{ rocm_release_build }}_all.deb"
-      redhat: "https://repo.radeon.com/amdgpu-install/{{ rocm_release }}/rhel/{{ ansible_distribution_version }}/amdgpu-install_{{ rocm_release_build }}.el{{ ansible_distribution_major_version }}.noarch.rpm"
+    rocm_gpg_url: 'https://repo.radeon.com/rocm/rocm.gpg.key'
     rocm_reqs:
       common:
         - dkms
-      debian:
+      Debian:
         - "linux-headers-{{ ansible_kernel }}"
         - "linux-modules-extra-{{ ansible_kernel }}"
-      redhat:
+      RedHat:
         - "kernel-headers"
         - "kernel-devel-matched"
         - "kernel-modules-extra"
   tasks:
+
+    - name: "Split ROCm release string to list [or default]"
+      ansible.builtin.set_fact:
+        rocm_requests: "{{ (rocm_releases | split(',')) | default(['6.2.2']) }}"
+
+    - name: Sort ROCm version requests
+      ansible.builtin.set_fact:  # while 'set_fact' allows many at once, laziness is lost - can't cross-reference
+        rocm_release_peak: "{{ (rocm_requests | community.general.version_sort) | last }}"
+
     - name: Install Requirements
       ansible.builtin.package:
-        name: "{{ rocm_reqs['common'] + rocm_reqs[(ansible_os_family | lower)] }}"
+        name: "{{ rocm_reqs['common'] + rocm_reqs[ansible_os_family] }}"
         state: present
         update_cache: true  # passed to the modules for either 'apt' or 'dnf'; supported by either
 
-    - name: Install 'amdgpu-install'
-      ansible.builtin.package:  # module/backing package managers are inconsistent with URL handling as 'name'
-        name: "{{ rocm_amdgpu_pkg['redhat'] if ansible_os_family in ['RedHat'] else omit }}"
-        deb: "{{ rocm_amdgpu_pkg['debian'] if ansible_os_family in ['Debian'] else omit }}"
+    - name: RedHat
+      when: ansible_os_family in ['RedHat']
+      block:
+        - name: Manage 'amdgpu' Yum repository
+          ansible.builtin.yum_repository:
+            baseurl: "https://repo.radeon.com/amdgpu/{{ rocm_release_peak }}/el/{{ ansible_distribution_version }}/main/{{ ansible_architecture }}/"
+            gpgkey: "{{ rocm_gpg_url }}"
+            name: amdgpu
 
-    - name: "Install {{ _pkgs }}"
+        - name: "Manage versioned ROCm Yum repositories"
+          ansible.builtin.yum_repository:
+            baseurl: "https://repo.radeon.com/rocm/el{{ ansible_distribution_major_version }}/{{ rocm_release }}/main"
+            gpgkey: "{{ rocm_gpg_url }}"
+            name: rocm
+          loop: "{{ rocm_requests }}"
+          loop_control: { loop_var: rocm_release }
+
+        - name: "Ensure CodeReady Builder+EPEL for RHEL/derivatives [that aren't Fedora]"
+          when: ansible_distribution not in ['Fedora']
+          block:
+            - name: Manage CRB
+              community.general.dnf_config_manager:
+                name: crb
+                state: enabled
+
+            - name: Ensure EPEL
+              ansible.builtin.package:
+                name: "{{ epel[ansible_distribution] | default('epel-release') }}"  # CentOS/etc provide 'epel-release'; RedHat and others may require download
+                state: present
+              vars:
+                epel:
+                  RedHat: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
+
+    - name: Debian
+      when: ansible_os_family in ['Debian']
+      block:
+
+        - name: Fetch signing key for Apt
+          ansible.builtin.apt_key:
+            url: "{{ rocm_gpg_url }}"
+            keyring: /etc/apt/trusted.gpg.d/rocm.gpg
+
+        - name: Manage 'amdgpu' APT repository
+          ansible.builtin.apt_repository:
+            repo: >
+              deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/rocm.gpg]
+              https://repo.radeon.com/amdgpu/{{ rocm_release_peak }}/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main
+            state: present
+            filename: amdgpu
+
+        - name: "Manage versioned ROCm Apt repositories"
+          ansible.builtin.apt_repository:
+            repo: >
+              deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/rocm.gpg]
+              https://repo.radeon.com/rocm/apt/{{ rocm_release }} {{ ansible_distribution_release }} main
+            state: present
+            filename: rocm
+          loop: "{{ rocm_requests }}"
+          loop_control: { loop_var: rocm_release }
+
+    - name: Install amdgpu-dkms
       ansible.builtin.package:
-        name: "{{ _pkgs }}"
+        name: amdgpu-dkms
+        state: present
+
+    - name: Install ROCm releases
+      ansible.builtin.package:
+        name: "rocm{{ _rel }}"
+        state: present
+      loop: "{{ rocm_requests | community.general.version_sort }}"
+      loop_control: { loop_var: _rel }
+
+    - name: Install remaining packages
+      ansible.builtin.package:
+        name: "{{ amdgpu_install | split(',') }}"  # serialized through Packer
         state: present
         update_cache: true
-      vars:
-        # serialized through 'extra_arguments' with Packer/the Ansible plugin
-        # use 'split' filter to return this comma-separated string to a list [if applicable]
-        _pkgs: "{{ amdgpu_install | split(',') }}"  # default: '["amdgpu-dkms", "rocm"]', see 'ubuntu-rocm.variables.pkr.hcl'
+
 # vim: ft=yaml.ansible
