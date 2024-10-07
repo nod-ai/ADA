@@ -20,7 +20,7 @@ Clone and run with `ansible-pull`:
 
 ```shell
 ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml \
-      [-e rocm_releases=6.2.2,..]  # optional
+       -e rocm_releases=6.2.2,...  # optional
 ```
 
 ### Manual
