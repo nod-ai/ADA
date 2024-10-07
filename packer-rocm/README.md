@@ -75,7 +75,7 @@ The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it
 | `rocm_installed` | If _ROCm_ multi-release packages should be installed | `False` |
 | `rocm_builder_disk` | Space given to the builder VM; `amdgpu` and _ROCm_ releases compound quickly. | _70G_ |
 | `headless` | If the VNC window for the builder VM is _hidden_ | `True` |
-| `kernel` | _MaaS_ images normally do not include a kernel, set this to include one. | <ul><li>_Ansible:_ `linux-generic`</li><li>_Manual:_ None</li></ul> |
+| `kernel` | _MaaS_ images normally do not include a kernel, set this to include one. | _Ansible:_ `linux-generic`<br />_Manual:_ None |
 
 #### Proxy
 
