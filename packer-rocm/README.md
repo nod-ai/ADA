@@ -21,7 +21,7 @@ ansible-galaxy collection install ansible.posix community.general
 ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml
 ```
 
-The variables noted in [I/O](#io) may be given with `-e 'var=value'`
+Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=value'`
 
 ### Manual
 
