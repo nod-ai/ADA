@@ -110,7 +110,7 @@
 
     - name: Install remaining packages
       ansible.builtin.package:
-        name: "{{ amdgpu_install | split(',') }}"  # serialized through Packer
+        name: "{{ (amdgpu_install | split(',')) | default([]) }}"  # list may be serialized through Packer or provided to ansible w/ '-e amdgpu_install=pkg1,...'
         state: present
         update_cache: true
 
