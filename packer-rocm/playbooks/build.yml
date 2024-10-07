@@ -36,7 +36,9 @@
           packer build
           -var kernel={{ kernel | default('linux-generic') }}
           -var headless={{ headless | default('true') }}
+          -var rocm_extras={{ rocm_extras | default('mesa-amdgpu-va-drivers') }}
           -var rocm_releases=\"{{ (rocm_releases | default('6.2.2')) }}\"
+          -var rocm_builder_disk={{ rocm_builder_disk | default('70G') }}
           -only=qemu.rocm .
         chdir: "{{ build_dir }}"
         creates: "{{ (build_dir, 'ubuntu-rocm.dd.gz') | path_join }}"  # avoid overwriting - require delete
