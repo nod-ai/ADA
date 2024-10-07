@@ -76,9 +76,10 @@ func createSubscription(server RedfishServer, SubscriptionPayload SubscriptionPa
 	// Get the event service
 	eventService, err := c.Service.EventService()
 	if err != nil {
-		return "", fmt.Errorf("failed to get event service for server: %v", err)
+		return "", fmt.Errorf("failed to get event service on server %s: %v", server.IP, err)
 	}
 
+	deleteConflictingSubscriptions(server, SubscriptionPayload)
 	// Create the subscription based on the Redfish version
 	if isV1_5() {
 		return createV1_5Subscription(eventService, SubscriptionPayload)
@@ -170,7 +171,7 @@ func deleteSubscriptionFromServer(server RedfishServer, subscriptionURI string) 
 
 	c, err := getRedfishClient(server)
 	if err != nil {
-		return fmt.Errorf("failed to connect to redfish server %s: %v", server.IP, err)
+		return fmt.Errorf("failed to connect to server %s: %v", server.IP, err)
 	}
 	defer c.Logout()
 
@@ -187,6 +188,47 @@ func deleteSubscriptionFromServer(server RedfishServer, subscriptionURI string) 
 	}
 
 	return nil
+}
+
+// Unsubscribes/deletes conflicting subscriptions from the server
+func deleteConflictingSubscriptions(server RedfishServer, subscriptionPayload SubscriptionPayload) error {
+	subscriptions, err := getServerSubscriptions(server)
+	if err != nil {
+		return err
+	}
+	for _, subscription := range subscriptions {
+		if subscription.Destination == subscriptionPayload.Destination {
+			err := deleteSubscriptionFromServer(server, subscription.ODataID)
+			if err != nil {
+				return fmt.Errorf("failed to delete event subscription %s, on server %s: %v", subscription.ID, server.IP, err)
+			} else {
+				log.Printf("successfully deleted overlapping event subscription %s from server %s", subscription.ID, server.IP)
+			}
+		}
+	}
+	return nil
+}
+
+// Gets all subscriptions currently active on the given server
+func getServerSubscriptions(server RedfishServer) ([]*redfish.EventDestination, error) {
+
+	c, err := getRedfishClient(server)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to server %s: %v", server.IP, err)
+	}
+	defer c.Logout()
+
+	// Get the event service
+	eventService, err := c.Service.EventService()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get event service on server %s: %v", server.IP, err)
+	}
+
+	subscriptions, err := eventService.GetEventSubscriptions()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get event subscriptions on server %s: %v", server.IP, err)
+	}
+	return subscriptions, nil
 }
 
 // Retrieve the server's credentials from the config based on IP

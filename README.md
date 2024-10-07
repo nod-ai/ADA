@@ -7,5 +7,9 @@ AMD Deployment Assistant
 ## Deploy the image with MAAS
 
 ### If you use NFS please update the /opt/rocm symlink to the NFS mount
+```
+ln -s /nfsshare/rocm-<version> /opt/rocm
+```
+
 
 ## Deploy SLURM
