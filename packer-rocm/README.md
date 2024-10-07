@@ -11,14 +11,13 @@ project.
 ### Requirements
 
 * [packer](https://developer.hashicorp.com/packer/docs/install)
-* `ansible-core`, examples: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
+* `ansible`: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
 * `qemu`
 
 ### Playbook
 
-Clone and run with `ansible-pull`:
-
 ```shell
+ansible-galaxy collection install ansible.posix community.general
 ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml
 ```
 
