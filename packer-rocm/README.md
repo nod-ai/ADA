@@ -19,9 +19,10 @@ project.
 Clone and run with `ansible-pull`:
 
 ```shell
-ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml \
-       -e rocm_releases=6.2.2,...  # optional
+ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml
 ```
+
+The variables noted in [I/O](#io) may be given with `-e 'var=value'`
 
 ### Manual
 
@@ -56,7 +57,7 @@ ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.ym
     PACKER_LOG=1 packer build \
         -var kernel=linux-generic \
         -var rocm_releases="6.2.2,6.2.1" \
-        -var amdgpu_install='["mesa-amdgpu-va-drivers"]' \
+        -var rocm_extras="mesa-amdgpu-va-drivers,ansible" \
         -only=qemu.rocm .
     ```
 
@@ -67,8 +68,8 @@ The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it
 
 These _Packer_ variables are optional:
 
-* `rocm_releases`
-* `amdgpu_install`
+* `rocm_releases`: One or more versions of _ROCm_ to include in the image. Latest of these selects the `amdgpu` driver
+* `rocm_extras`: Packages to install _after_ `amdgpu-dkms` and ROCm release(s)
 * `kernel`
   * Defaults to `linux-generic` when building with _Ansible_
   * When building manually *[and not specified]*, left out of the image artifact. Provided at install time by _MaaS_

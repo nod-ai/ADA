@@ -9,10 +9,10 @@ variable "rocm_releases" {
   description = "Comma-separated string of ROCm release(s) for the image; latest is selected for the 'amdgpu' driver"
 }
 
-variable "amdgpu_install" {
-  type = list(string)
-  default = ["mesa-amdgpu-va-drivers"]
-  description = "Packages to install [after 'amdgpu-dkms' and ROCm releases]"
+variable "rocm_extras" {
+  type = string
+  default = "mesa-amdgpu-va-drivers"
+  description = "Comma-separated string of extra packages to install [after 'amdgpu-dkms' and ROCm releases]"
 }
 
 packer {

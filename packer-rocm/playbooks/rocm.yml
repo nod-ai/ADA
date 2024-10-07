@@ -4,11 +4,12 @@
 - name: "Prepare amdgpu-dkms + ROCm"
   hosts: default
   become: true
-  environment:  # may be superfluous; mapped through Packer HCL with 'ansible_env_vars'
+  environment:  # may be superfluous for your environment; mapped through Packer HCL with 'ansible_env_vars'
     http_proxy: "{{ lookup('ansible.builtin.env', 'http_proxy') | default(omit) }}"
     https_proxy: "{{ lookup('ansible.builtin.env', 'https_proxy') | default(omit) }}"
     no_proxy: "{{ lookup('ansible.builtin.env', 'no_proxy') | default(omit) }}"
   vars:
+    rocm_requests: "{{ (rocm_releases | split(',')) | default(['6.2.2']) }}"
     rocm_gpg_url: 'https://repo.radeon.com/rocm/rocm.gpg.key'
     rocm_reqs:
       common:
@@ -20,14 +21,11 @@
         - "kernel-headers"
         - "kernel-devel-matched"
         - "kernel-modules-extra"
+    rocm_fedora_el: '9.4'  # NOTE: placeholder, for testing: assume equivalence between this RHEL release and 'current Fedora'
   tasks:
 
-    - name: "Split ROCm release string to list [or default]"
-      ansible.builtin.set_fact:
-        rocm_requests: "{{ (rocm_releases | split(',')) | default(['6.2.2']) }}"
-
     - name: Sort ROCm version requests
-      ansible.builtin.set_fact:  # while 'set_fact' allows many at once, laziness is lost - can't cross-reference
+      ansible.builtin.set_fact:
         rocm_release_peak: "{{ (rocm_requests | community.general.version_sort) | last }}"
 
     - name: Install Requirements
@@ -39,15 +37,23 @@
     - name: RedHat
       when: ansible_os_family in ['RedHat']
       block:
-        - name: Manage 'amdgpu' Yum repository
+        - name: "Manage 'amdgpu' Yum repositories"
           ansible.builtin.yum_repository:
-            baseurl: "https://repo.radeon.com/amdgpu/{{ rocm_release_peak }}/el/{{ ansible_distribution_version }}/main/{{ ansible_architecture }}/"
+            baseurl: "https://repo.radeon.com/amdgpu/{{ rocm_release_peak }}/el/{{ rocm_fedora_el if ansible_distribution in ['Fedora'] else ansible_distribution_version }}/main/{{ rpmrepo.subdir }}/"
+            description: "AMDGPU {{ rocm_release_peak }} repository"
+            enabled: "{{ rpmrepo.enabled | default(true) }}"
+            file: amdgpu
             gpgkey: "{{ rocm_gpg_url }}"
-            name: amdgpu
+            name: "{{ rpmrepo.name }}"
+          loop:
+            - { name: amdgpu, subdir: "{{ ansible_architecture }}" }
+            - { name: amdgpu-src, subdir: "source", enabled: false }
+          loop_control: { loop_var: rpmrepo }
 
         - name: "Manage versioned ROCm Yum repositories"
           ansible.builtin.yum_repository:
-            baseurl: "https://repo.radeon.com/rocm/el{{ ansible_distribution_major_version }}/{{ rocm_release }}/main"
+            baseurl: "https://repo.radeon.com/rocm/el{{ (rocm_fedora_el | split('.') | first) if ansible_distribution in ['Fedora'] else ansible_distribution_major_version }}/{{ rocm_release }}/main"
+            description: "ROCm {{ rocm_release }} repository"
             gpgkey: "{{ rocm_gpg_url }}"
             name: rocm
           loop: "{{ rocm_requests }}"
@@ -110,7 +116,7 @@
 
     - name: Install remaining packages
       ansible.builtin.package:
-        name: "{{ (amdgpu_install | split(',')) | default([]) }}"  # list may be serialized through Packer or provided to ansible w/ '-e amdgpu_install=pkg1,...'
+        name: "{{ (rocm_extras | split(',')) if rocm_extras is defined else [] }}"  # comprehension required; can't '|default' out of undefined split
         state: present
         update_cache: true
 
