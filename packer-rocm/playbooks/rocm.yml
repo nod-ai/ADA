@@ -9,7 +9,9 @@
     https_proxy: "{{ lookup('ansible.builtin.env', 'https_proxy') | default(omit) }}"
     no_proxy: "{{ lookup('ansible.builtin.env', 'no_proxy') | default(omit) }}"
   vars:
-    rocm_requests: "{{ (rocm_releases | split(',')) | default(['6.2.2']) }}"
+    rocm_installed: false  # only install 'amdgpu-dkms' and 'extra packages' by default; must opt into ROCm
+    rocm_default: '6.2.2'
+    rocm_requests: "{{ (rocm_releases | split(',')) if rocm_releases is defined else [rocm_default] }}"
     rocm_gpg_url: 'https://repo.radeon.com/rocm/rocm.gpg.key'
     rocm_reqs:
       common:
@@ -24,11 +26,11 @@
     rocm_fedora_el: '9.4'  # NOTE: placeholder, for testing: assume equivalence between this RHEL release and 'current Fedora'
   tasks:
 
-    - name: Sort ROCm version requests
+    - name: "Sort ROCm version requests"
       ansible.builtin.set_fact:
         rocm_release_peak: "{{ (rocm_requests | community.general.version_sort) | last }}"
 
-    - name: Install Requirements
+    - name: "Install Requirements"
       ansible.builtin.package:
         name: "{{ rocm_reqs['common'] + rocm_reqs[ansible_os_family] }}"
         state: present
@@ -62,12 +64,12 @@
         - name: "Ensure CodeReady Builder+EPEL for RHEL/derivatives [that aren't Fedora]"
           when: ansible_distribution not in ['Fedora']
           block:
-            - name: Manage CRB
+            - name: "Manage CRB"
               community.general.dnf_config_manager:
                 name: crb
                 state: enabled
 
-            - name: Ensure EPEL
+            - name: "Ensure EPEL"
               ansible.builtin.package:
                 name: "{{ epel[ansible_distribution] | default('epel-release') }}"  # CentOS/etc provide 'epel-release'; RedHat and others may require download
                 state: present
@@ -79,12 +81,12 @@
       when: ansible_os_family in ['Debian']
       block:
 
-        - name: Fetch signing key for Apt
+        - name: "Fetch signing key for Apt"
           ansible.builtin.apt_key:
             url: "{{ rocm_gpg_url }}"
             keyring: /etc/apt/trusted.gpg.d/rocm.gpg
 
-        - name: Manage 'amdgpu' APT repository
+        - name: "Manage 'amdgpu' APT repository"
           ansible.builtin.apt_repository:
             repo: >
               deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/rocm.gpg]
@@ -102,22 +104,22 @@
           loop: "{{ rocm_requests }}"
           loop_control: { loop_var: rocm_release }
 
-    - name: Install amdgpu-dkms
+    - name: "Install 'amdgpu-dkms'"
       ansible.builtin.package:
         name: amdgpu-dkms
         state: present
 
-    - name: Install ROCm releases
+    - name: "Install ROCm releases (when 'rocm_installed' is truthy)"
       ansible.builtin.package:
         name: "rocm{{ _rel }}"
         state: present
       loop: "{{ rocm_requests | community.general.version_sort }}"
       loop_control: { loop_var: _rel }
+      when: rocm_installed is truthy(convert_bool=True)
 
-    - name: Install remaining packages
+    - name: "Install remaining packages"
       ansible.builtin.package:
-        name: "{{ (rocm_extras | split(',')) if rocm_extras is defined else [] }}"  # comprehension required; can't '|default' out of undefined split
+        name: "{{ rocm_extras | split(',') }}"
         state: present
         update_cache: true
-
-# vim: ft=yaml.ansible
+      when: rocm_extras is defined

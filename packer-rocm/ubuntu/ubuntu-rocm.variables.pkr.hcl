@@ -9,6 +9,12 @@ variable "rocm_releases" {
   description = "Comma-separated string of ROCm release(s) for the image; latest is selected for the 'amdgpu' driver"
 }
 
+variable "rocm_installed" {
+  type = string
+  default = "false"
+  description = "If ROCm packages should be installed after 'amdgpu-dkms'; accepts 'truthy' or 'falsy' values (1/0/y/n/'inapplicable')"
+}
+
 variable "rocm_extras" {
   type = string
   default = "mesa-amdgpu-va-drivers"

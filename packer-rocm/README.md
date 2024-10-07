@@ -1,7 +1,7 @@
 # packer-rocm
 
 [MaaS](https://maas.io/)-enabled [Packer](https://www.packer.io/) images
-with `amdgpu-dkms` and [ROCm](https://www.amd.com/en/products/software/rocm.html)
+with `amdgpu-dkms` and optional [ROCm](https://www.amd.com/en/products/software/rocm.html)
 installed. Builds on the [canonical/packer-maas](https://github.com/canonical/packer-maas/)
 project.
 
@@ -68,13 +68,14 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
 The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it may be here:  
 `~/.ansible/pull/$HOSTNAME/packer-rocm/packer-maas/ubuntu`
 
-These _Packer_ variables are optional:
-
-* `rocm_releases`: One or more versions of _ROCm_ to include in the image. Latest of these selects the `amdgpu` driver
-* `rocm_extras`: Packages to install _after_ `amdgpu-dkms` and ROCm release(s)
-* `kernel`
-  * Defaults to `linux-generic` when building with _Ansible_
-  * When building manually *[and not specified]*, left out of the image artifact. Provided at install time by _MaaS_
+| Variable | Description | Default |
+|:----------:|-------------|:---------:|
+| `rocm_releases` | One or more _ROCm_ releases to include in the image. Newest selects the `amdgpu` driver. | _6.2.2_ |
+| `rocm_extras` | Packages to install _after_ `amdgpu-dkms` and _ROCm_. Accepts comma-separated strings. | _mesa-amdgpu-va-drivers_ |
+| `rocm_installed` | If _ROCm_ multi-release packages should be installed | `False` |
+| `rocm_builder_disk` | Space given to the builder VM; `amdgpu` and _ROCm_ releases compound quickly. | _70G_ |
+| `headless` | If the VNC window for the builder VM is _hidden_ | `True` |
+| `kernel` | _MaaS_ images normally do not include a kernel, set this to include one. | _Ansible:_ `linux-generic`<br />_Manual:_ None |
 
 #### Proxy
 
