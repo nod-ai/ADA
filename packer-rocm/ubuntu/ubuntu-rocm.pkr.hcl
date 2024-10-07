@@ -11,7 +11,7 @@ source "qemu" "rocm" {
   cd_label        = "cidata"
   # system resources
   cpus            = 8      # expedite compiling, adjust to machine allowance
-  disk_size       = "70G"  # ROCm/amdgpu builds demand a lot of space; layout in 'user-data-rocm' will claim all of this (OotB default is 50%)
+  disk_size       = "${var.rocm_builder_disk}"
   memory          = 4096   # OOM w/ 2G during DKMS builds, 3G *may* suffice
   # image/build prefs
   accelerator     = "kvm"  # or 'none' if KVM is unavailable
@@ -55,9 +55,8 @@ build {
     extra_arguments = [  
       "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
       "--scp-extra-args", "'-O'",
-      "-e", "rocm_release_build=${var.rocm_release_build}",  # pass ROCm requests
-      "-e", "rocm_release=${var.rocm_release}",
-      "-e", "amdgpu_install=${join(",", var.amdgpu_install)}"
+      "-e", "rocm_releases=${var.rocm_releases}",  # pass ROCm requests [release + packages]
+      "-e", "rocm_extras=${var.rocm_extras}",
     ]
   }
 

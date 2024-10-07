@@ -3,20 +3,22 @@ variable "ubuntu_release" {
   default = "22.04.5"
 }
 
-variable "rocm_release" {
+variable "rocm_releases" {
   type = string
   default = "6.2.2"
+  description = "Comma-separated string of ROCm release(s) for the image; latest is selected for the 'amdgpu' driver"
 }
 
-variable "rocm_release_build" {
+variable "rocm_extras" {
   type = string
-  default = "6.2.60202-1"
+  default = "mesa-amdgpu-va-drivers"
+  description = "Comma-separated string of extra packages to install [after 'amdgpu-dkms' and ROCm releases]"
 }
 
-variable "amdgpu_install" {
-  type = list(string)
-  default = ["amdgpu-dkms", "rocm", "mesa-amdgpu-va-drivers"]
-  description = "The packages to install with Ansible [after installing 'amdgpu-install']"
+variable "rocm_builder_disk" {
+  type = string
+  default = "70G"
+  description = "amdgpu and ROCm releases demand considerable space. Layout in 'user-data-rocm' will claim all of this"
 }
 
 packer {

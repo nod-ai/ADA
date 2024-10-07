@@ -1,8 +1,8 @@
 # packer-rocm
 
 [MaaS](https://maas.io/)-enabled [Packer](https://www.packer.io/) images
-with [amdgpu-install](https://amdgpu-install.readthedocs.io/en/latest/) and [ROCm](https://www.amd.com/en/products/software/rocm.html) installed.
-Builds on the [canonical/packer-maas](https://github.com/canonical/packer-maas/)
+with `amdgpu-dkms` and [ROCm](https://www.amd.com/en/products/software/rocm.html)
+installed. Builds on the [canonical/packer-maas](https://github.com/canonical/packer-maas/)
 project.
 
 
@@ -11,18 +11,19 @@ project.
 ### Requirements
 
 * [packer](https://developer.hashicorp.com/packer/docs/install)
-* `ansible-core`, examples: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
+* `ansible`: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
 * `qemu`
+* `rsync`
+* `git`
 
 ### Playbook
 
-Clone and run with `ansible-pull`:
-
 ```shell
+ansible-galaxy collection install ansible.posix community.general
 ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml
 ```
 
-The _Packer_ variables in [I/O](#io) apply with _Ansible_ as well: `-e ...`
+Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=value'`
 
 ### Manual
 
@@ -56,9 +57,9 @@ The _Packer_ variables in [I/O](#io) apply with _Ansible_ as well: `-e ...`
     # Build
     PACKER_LOG=1 packer build \
         -var kernel=linux-generic \
-        -var rocm_release=6.2.2 \
-        -var rocm_release_build=6.2.60202-1 \
-        -var amdgpu_install='["amdgpu-dkms", "rocm", "mesa-amdgpu-va-drivers"]' \
+        -var rocm_releases="6.2.2,6.2.1" \
+        -var rocm_extras="mesa-amdgpu-va-drivers,ansible" \
+        -var rocm_builder_disk="70G" \
         -only=qemu.rocm .
     ```
 
@@ -69,9 +70,8 @@ The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it
 
 These _Packer_ variables are optional:
 
-* `rocm_release`
-* `rocm_release_build`
-* `amdgpu_install`
+* `rocm_releases`: One or more versions of _ROCm_ to include in the image. Latest of these selects the `amdgpu` driver
+* `rocm_extras`: Packages to install _after_ `amdgpu-dkms` and ROCm release(s)
 * `kernel`
   * Defaults to `linux-generic` when building with _Ansible_
   * When building manually *[and not specified]*, left out of the image artifact. Provided at install time by _MaaS_
