@@ -69,11 +69,11 @@ The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it
 `~/.ansible/pull/$HOSTNAME/packer-rocm/packer-maas/ubuntu`
 
 | Variable | Description | Default |
-|----------|-------------|---------|
-| `rocm_releases` | One or more versions of _ROCm_ to include in the image. Newest entry selects the `amdgpu` driver. | _6.2.2_ |
-| `rocm_extras` | Packages to install _after_ `amdgpu-dkms` and potentially _ROCm_ in a comma-separated string. | _mesa-amdgpu-va-drivers_ |
-| `rocm_installed` | If _ROCm_ packages should be installed. The `amdgpu-dkms` package and extras are always installed | `False` |
-| `rocm_builder_disk` | Space allocated to the _QEMU_ builder. _ROCm_ and `amdgpu` builds require considerable space. | _70G_ |
+|:----------:|-------------|:---------:|
+| `rocm_releases` | One or more _ROCm_ releases to include in the image. Newest selects the `amdgpu` driver. | _6.2.2_ |
+| `rocm_extras` | Packages to install _after_ `amdgpu-dkms` and _ROCm_. Accepts comma-separated strings. | _mesa-amdgpu-va-drivers_ |
+| `rocm_installed` | If _ROCm_ multi-release packages should be installed | `False` |
+| `rocm_builder_disk` | Space given to the builder VM; `amdgpu` and _ROCm_ releases compound quickly. | _70G_ |
 | `headless` | If the VNC window for the builder VM is _hidden_ | `True` |
 | `kernel` | _MaaS_ images normally do not include a kernel, set this to include one. | <ul><li>_Ansible:_ `linux-generic`</li><li>_Manual:_ None</li></ul> |
 
