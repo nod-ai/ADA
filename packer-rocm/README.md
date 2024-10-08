@@ -54,6 +54,8 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
     # Change working directory to the prepared sources
     cd packer-maas/ubuntu
 
+    # Optional: place any package files to copy and install in the 'packages' directory (RPM or DEB)
+
     # Build
     PACKER_LOG=1 packer build \
         -var kernel=linux-generic \
