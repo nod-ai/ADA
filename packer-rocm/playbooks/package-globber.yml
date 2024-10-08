@@ -10,8 +10,8 @@
   vars:
     packages: '/tmp/packages'
     pkg_exts:  # mapped by 'ansible_os_family' to glob [relevant] file patterns
-      Debian: ".deb"
-      RedHat: ".rpm"
+      Debian: '.deb'
+      RedHat: '.rpm'
   tasks:
 
     # 'fileglob' works on the controller; must 'find' when potentially mixing local/remote client usecases
