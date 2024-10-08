@@ -70,12 +70,12 @@ The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it
 
 | Variable | Description | Default |
 |:----------:|-------------|:---------:|
-| `rocm_releases` | One or more _ROCm_ releases to include in the image. Newest selects the `amdgpu` driver. | _6.2.2_ |
-| `rocm_extras` | Packages to install _after_ `amdgpu-dkms` and _ROCm_. Accepts comma-separated strings. | _mesa-amdgpu-va-drivers_ |
-| `rocm_installed` | If _ROCm_ multi-release packages should be installed | `False` |
-| `rocm_builder_disk` | Space given to the builder VM; `amdgpu` and _ROCm_ releases compound quickly. | _70G_ |
-| `headless` | If the VNC window for the builder VM is _hidden_ | `True` |
-| `kernel` | _MaaS_ images normally do not include a kernel, set this to include one. | _Ansible:_ `linux-generic`<br />_Manual:_ None |
+| `rocm_releases` | One or more versions to include _[as a comma-separated string]_. Newest selects the `amdgpu` driver. | _6.2.2_ |
+| `rocm_extras` | Packages to install _after_ `amdgpu-dkms` and _ROCm_. Also comma-separated. | _mesa-amdgpu-va-drivers_ |
+| `rocm_installed` | If _ROCm_ packages are installed. The `amdgpu` _driver_ and extras are always included. | `False` |
+| `rocm_builder_disk` | Space given to the builder VM; releases compound quickly. | _70G_ |
+| `headless` | If the VNC window for the VM is _hidden_ during build. | `True` |
+| `kernel` | _MaaS_ images do not _typically_ include a kernel. Set this to include one. | _Ansible:_ `linux-generic`<br />_Manual:_ None |
 
 #### Proxy
 
