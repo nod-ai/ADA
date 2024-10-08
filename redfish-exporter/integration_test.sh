@@ -129,6 +129,8 @@ check_metric() {
 
 check_metric "RedFishEvents_recieved"
 check_metric "RedFishEvents_processing_time"
+check_metric "SlurmAPI_failure"
+check_metric "SlurmAPI_success"
 
 log "Integration test completed successfully"
 

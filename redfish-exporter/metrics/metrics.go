@@ -14,13 +14,13 @@
  *  limitations under the License.
 **/
 
-package main
+package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var eventCountMetric = prometheus.NewCounterVec(
+var EventCountMetric = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Name: "RedFishEvents_recieved",
 		Help: "Total number of events processed",
@@ -28,7 +28,7 @@ var eventCountMetric = prometheus.NewCounterVec(
 	[]string{"SourceIP", "EventType"}, // Define the labels you want to use
 )
 
-var eventProcessingTimeMetric = prometheus.NewGaugeVec(
+var EventProcessingTimeMetric = prometheus.NewGaugeVec(
 	prometheus.GaugeOpts{
 		Name: "RedFishEvents_processing_time",
 		Help: "Time taken to process events",
@@ -36,9 +36,27 @@ var eventProcessingTimeMetric = prometheus.NewGaugeVec(
 	[]string{"SourceIP", "EventType"}, // Define the labels you want to use
 )
 
+var SlurmAPIFailureMetric = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "SlurmAPI_failure",
+		Help: "Total number of Slurm API calls that failed",
+	},
+	[]string{"SourceIP", "SlurmNodeName", "EventSeverity", "EventAction"}, // Define the labels you want to use
+)
+
+var SlurmAPISuccessMetric = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "SlurmAPI_success",
+		Help: "Total number of Slurm API calls that succeeded",
+	},
+	[]string{"SourceIP", "SlurmNodeName", "EventSeverity", "EventAction"}, // Define the labels you want to use
+)
+
 func init() {
 	// Register the counter with Prometheus's default registry
-	prometheus.MustRegister(eventCountMetric)
+	prometheus.MustRegister(EventCountMetric)
 	// Register the gauge with Prometheus's default registry
-	prometheus.MustRegister(eventProcessingTimeMetric)
+	prometheus.MustRegister(EventProcessingTimeMetric)
+	prometheus.MustRegister(SlurmAPIFailureMetric)
+	prometheus.MustRegister(SlurmAPISuccessMetric)
 }
