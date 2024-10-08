@@ -65,28 +65,22 @@ func getRedfishClient(server RedfishServer) (*gofish.APIClient, error) {
 }
 
 // Create a subscription
-func createSubscription(server RedfishServer, SubscriptionPayload SubscriptionPayload) (string, error) {
-
-	// Establish a connection to the server
-	c, err := getRedfishClient(server)
-	if err != nil {
-		return "", fmt.Errorf("failed to connect to server %s: %v", server.IP, err)
-	}
-	defer c.Logout()
-
+func createSubscription(c *gofish.APIClient, server RedfishServer, subscriptionPayload SubscriptionPayload) (string, error) {
 	// Get the event service
 	eventService, err := c.Service.EventService()
 	if err != nil {
 		return "", fmt.Errorf("failed to get event service on server %s: %v", server.IP, err)
 	}
 
-	deleteConflictingSubscriptions(server, SubscriptionPayload)
+	if err := deleteConflictingSubscriptions(c, server, subscriptionPayload); err != nil {
+		return "", fmt.Errorf("failed to delete conflicting subscriptions: %v", err)
+	}
+
 	// Create the subscription based on the Redfish version
 	if isV1_5() {
-		return createV1_5Subscription(eventService, SubscriptionPayload)
-	} else {
-		return createLegacySubscription(eventService, SubscriptionPayload)
+		return createV1_5Subscription(eventService, subscriptionPayload)
 	}
+	return createLegacySubscription(eventService, subscriptionPayload)
 }
 
 func isV1_5() bool {
@@ -147,7 +141,15 @@ func CreateSubscriptionsForAllServers(redfishServers []RedfishServer, subscripti
 		wg.Add(1)
 		go func(server RedfishServer) {
 			defer wg.Done()
-			subscriptionURI, err := createSubscription(server, subscriptionPayload)
+
+			c, err := getRedfishClient(server)
+			if err != nil {
+				errChan <- fmt.Errorf("failed to connect to server %s: %v", server.IP, err)
+				return
+			}
+			defer c.Logout()
+
+			subscriptionURI, err := createSubscription(c, server, subscriptionPayload)
 			if err != nil {
 				errChan <- fmt.Errorf("subscription failed on server %s: %v", server.IP, err)
 				return
@@ -155,7 +157,7 @@ func CreateSubscriptionsForAllServers(redfishServers []RedfishServer, subscripti
 			mu.Lock()
 			subscriptionMap[server.IP] = subscriptionURI
 			mu.Unlock()
-			log.Printf("Successfully created subscription on redfish server %s: %s", server.IP, subscriptionURI)
+			log.Printf("Successfully created subscription on Redfish server %s: %s", server.IP, subscriptionURI)
 		}(server)
 	}
 
@@ -189,7 +191,15 @@ func DeleteSubscriptionsFromAllServers(redfishServers []RedfishServer, subscript
 		go func(serverIP, subscriptionURI string) {
 			defer wg.Done()
 			server := getServerInfo(redfishServers, serverIP)
-			if err := deleteSubscriptionFromServer(server, subscriptionURI); err != nil {
+
+			c, err := getRedfishClient(server)
+			if err != nil {
+				log.Printf("Failed to connect to server %s: %v", server.IP, err)
+				return
+			}
+			defer c.Logout()
+
+			if err := deleteSubscriptionFromServer(c, server, subscriptionURI); err != nil {
 				log.Printf("Failed to delete event subscription on server %s: %v", server.IP, err)
 			} else {
 				log.Printf("Successfully deleted event subscription from server %s: %s", server.IP, subscriptionURI)
@@ -201,14 +211,7 @@ func DeleteSubscriptionsFromAllServers(redfishServers []RedfishServer, subscript
 }
 
 // Delete a subscription from a redfish server
-func deleteSubscriptionFromServer(server RedfishServer, subscriptionURI string) error {
-
-	c, err := getRedfishClient(server)
-	if err != nil {
-		return fmt.Errorf("failed to connect to server %s: %v", server.IP, err)
-	}
-	defer c.Logout()
-
+func deleteSubscriptionFromServer(c *gofish.APIClient, server RedfishServer, subscriptionURI string) error {
 	// Get the event service
 	eventService, err := c.Service.EventService()
 	if err != nil {
@@ -216,8 +219,7 @@ func deleteSubscriptionFromServer(server RedfishServer, subscriptionURI string) 
 	}
 
 	// Attempt to delete the subscription
-	err = eventService.DeleteEventSubscription(subscriptionURI)
-	if err != nil {
+	if err := eventService.DeleteEventSubscription(subscriptionURI); err != nil {
 		return fmt.Errorf("failed to delete event subscription on server %s: %v", server.IP, err)
 	}
 
@@ -225,33 +227,25 @@ func deleteSubscriptionFromServer(server RedfishServer, subscriptionURI string) 
 }
 
 // Unsubscribes/deletes conflicting subscriptions from the server
-func deleteConflictingSubscriptions(server RedfishServer, subscriptionPayload SubscriptionPayload) error {
-	subscriptions, err := getServerSubscriptions(server)
+func deleteConflictingSubscriptions(c *gofish.APIClient, server RedfishServer, subscriptionPayload SubscriptionPayload) error {
+	subscriptions, err := getServerSubscriptions(c, server)
 	if err != nil {
 		return err
 	}
 	for _, subscription := range subscriptions {
 		if subscription.Destination == subscriptionPayload.Destination {
-			err := deleteSubscriptionFromServer(server, subscription.ODataID)
+			err := deleteSubscriptionFromServer(c, server, subscription.ODataID)
 			if err != nil {
-				return fmt.Errorf("failed to delete event subscription %s, on server %s: %v", subscription.ID, server.IP, err)
-			} else {
-				log.Printf("successfully deleted overlapping event subscription %s from server %s", subscription.ID, server.IP)
+				return fmt.Errorf("failed to delete event subscription %s on server %s: %v", subscription.ID, server.IP, err)
 			}
+			log.Printf("Successfully deleted overlapping event subscription %s from server %s", subscription.ID, server.IP)
 		}
 	}
 	return nil
 }
 
 // Gets all subscriptions currently active on the given server
-func getServerSubscriptions(server RedfishServer) ([]*redfish.EventDestination, error) {
-
-	c, err := getRedfishClient(server)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to server %s: %v", server.IP, err)
-	}
-	defer c.Logout()
-
+func getServerSubscriptions(c *gofish.APIClient, server RedfishServer) ([]*redfish.EventDestination, error) {
 	// Get the event service
 	eventService, err := c.Service.EventService()
 	if err != nil {
