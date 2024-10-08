@@ -116,6 +116,20 @@ curl localhost:8000/redfish/v1
 ```
 Note that SSL can be enabled using the provided dev certificate and key.
 
+### Slurm Integration
+
+1. Refer to [this](./api/README.md) guide for generating the Slurm REST API.
+
+2. Required Configurations for Enabling Slurm:
+
+- **SLURM_TOKEN**: Obtain the token by running the following command on the Slurm control node (where slurmrestd is running):
+    ```sh
+    scontrol token username=root lifespan=18000
+    ```
+    (`lifespan` is specified in seconds)
+
+- **SLURM_CONTROL_NODE**: The hostname or IP address of the Slurm control node where the REST server is running.
+
 ### Integration Testing
 
 To run the integration tests, use: `make integration-test`
