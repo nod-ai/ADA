@@ -34,6 +34,8 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
     git clone https://github.com/nod-ai/ADA.git
     ```
 
+    Place any `.deb` or `.rpm` packages to include with the image(s) in `packer-rocm/packages/`
+
 2. Copy assets from _ADA_ `packer-rocm` to the _Canonical_ `packer-maas` source:
 
     ```shell
@@ -53,8 +55,6 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
     ```shell
     # Change working directory to the prepared sources
     cd packer-maas/ubuntu
-
-    # Optional: place any package files to copy and install in the 'packages' directory (RPM or DEB)
 
     # Build
     PACKER_LOG=1 packer build \
@@ -81,7 +81,7 @@ The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it
 
 #### Proxy
 
-If the build requires a proxy for downloading the ISO, updates, or ROCm... these _environment variables_ are respected:
+These _environment variables_ are respected:
 
 * `http_proxy`
 * `https_proxy`
