@@ -58,8 +58,8 @@ type Config struct {
 }
 
 type TriggerEvent struct {
-	MessageId string `json:"MessageId"`
-	Action    string `json:"Action"`
+	Severity string `json:"Severity"`
+	Action   string `json:"Action"`
 }
 
 func setupConfig() Config {
