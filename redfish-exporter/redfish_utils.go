@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/stmcginnis/gofish"
 	"github.com/stmcginnis/gofish/redfish"
@@ -135,19 +136,43 @@ func createLegacySubscription(eventService *redfish.EventService, SubscriptionPa
 // Create subscriptions for all servers and return their URIs
 // Rollback if any subscription attempt fails
 func CreateSubscriptionsForAllServers(redfishServers []RedfishServer, subscriptionPayload SubscriptionPayload) (map[string]string, error) {
+	var wg sync.WaitGroup
+	var mu sync.Mutex // to guard access to the map
+
 	subscriptionMap := make(map[string]string)
 
+	errChan := make(chan error, len(redfishServers))
+
 	for _, server := range redfishServers {
+		wg.Add(1)
+		go func(server RedfishServer) {
+			defer wg.Done()
+			subscriptionURI, err := createSubscription(server, subscriptionPayload)
+			if err != nil {
+				errChan <- fmt.Errorf("subscription failed on server %s: %v", server.IP, err)
+				return
+			}
+			mu.Lock()
+			subscriptionMap[server.IP] = subscriptionURI
+			mu.Unlock()
+			log.Printf("Successfully created subscription on redfish server %s: %s", server.IP, subscriptionURI)
+		}(server)
+	}
 
-		// Establish a connection to the server
-		subscriptionURI, err := createSubscription(server, subscriptionPayload)
+	wg.Wait()
+	close(errChan)
+
+	// Any error that occurred during the subscription process
+	var allErrors []string
+	for err := range errChan {
 		if err != nil {
-			DeleteSubscriptionsFromAllServers(redfishServers, subscriptionMap)
-			return nil, fmt.Errorf("subscription failed on server %s: %v, rolling back previous subscriptions", server.IP, err)
+			allErrors = append(allErrors, err.Error())
 		}
+	}
 
-		log.Printf("Successfully created subscription on redfish server %s: %s", server.IP, subscriptionURI)
-		subscriptionMap[server.IP] = subscriptionURI
+	if len(allErrors) > 0 {
+		DeleteSubscriptionsFromAllServers(redfishServers, subscriptionMap)
+		return nil, fmt.Errorf("subscription process encountered errors: %s", allErrors)
 	}
 
 	return subscriptionMap, nil
@@ -155,15 +180,24 @@ func CreateSubscriptionsForAllServers(redfishServers []RedfishServer, subscripti
 
 // Delete all event subscriptions stored in the map
 func DeleteSubscriptionsFromAllServers(redfishServers []RedfishServer, subscriptionMap map[string]string) {
+	var wg sync.WaitGroup
+
+	log.Println("Unsubscribing from servers...")
+
 	for serverIP, subscriptionURI := range subscriptionMap {
-		server := getServerInfo(redfishServers, serverIP)
-		err := deleteSubscriptionFromServer(server, subscriptionURI)
-		if err != nil {
-			log.Printf("Failed to delete event subscription on server %s: %v", server.IP, err)
-		} else {
-			log.Printf("Successfully deleted event subscription from server %s: %s", server.IP, subscriptionURI)
-		}
+		wg.Add(1)
+		go func(serverIP, subscriptionURI string) {
+			defer wg.Done()
+			server := getServerInfo(redfishServers, serverIP)
+			if err := deleteSubscriptionFromServer(server, subscriptionURI); err != nil {
+				log.Printf("Failed to delete event subscription on server %s: %v", server.IP, err)
+			} else {
+				log.Printf("Successfully deleted event subscription from server %s: %s", server.IP, subscriptionURI)
+			}
+		}(serverIP, subscriptionURI)
 	}
+
+	wg.Wait()
 }
 
 // Delete a subscription from a redfish server
