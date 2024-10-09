@@ -20,10 +20,6 @@ The AMD Redfish Exporter exposes the following Prometheus-compatible metrics:
   - `SourceIP`: IP address of the Redfish server that sent the event
   - `EventType`: Type of the Redfish event
 
-## Exporter Metrics
-
-[Placeholder: Describe internal metrics of the exporter, such as uptime, goroutines, memory usage, etc.]
-
 ## Accessing Metrics
 
 Metrics are exposed on the `/metrics` endpoint. By default, this is available at `http://localhost:2112/metrics`.

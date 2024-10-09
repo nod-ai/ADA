@@ -47,7 +47,14 @@ docker build -t amd-redfish-exporter .
 - Run the container:
 
 ```bash
-docker run -p 8080:8080 -p 2112:2112 amd-redfish-exporter
+docker run --env-file .env -p 8080:8080 -p 2112:2112 amd-redfish-exporter
+```
+
+Note: The `--env-file` flag takes a filename as an argument and expects each line to be in the `VAR=VAL` format. The `.env` file variables should not be wrapped in quotes. Example:
+
+```bash
+SUBSCRIPTION_PAYLOAD={"Destination": "http://host.docker.internal:8080", "EventTypes": ["Alert", "StatusChange"], "Protocol": "Redfish", "Context": "YourContextData"}
+REDFISH_SERVERS=[{"ip": "http://<ip>:<port>", "username": "<username>", "password": "<password>", "loginType": "Session", "slurmNode": "Node1"}]
 ```
 
 ## Configuration
@@ -69,17 +76,17 @@ For a complete list of configuration options, refer to the [Configuration Guide]
 
 ## Usage
 
-1. Set up the configuration as described in the [Configuration](#configuration) section.
+- Set up the configuration as described in the [Configuration](#configuration) section.
 
-2. Run the AMD Redfish Exporter:
+- Run the AMD Redfish Exporter with `--enable-slurm` flag to enable SLURM integration:
 
 ```bash
-./amd-redfish-exporter
+./amd-redfish-exporter --enable-slurm
 ```
 
-1. The exporter will start subscribing to events from the configured Redfish servers and expose metrics on the specified metrics port.
+- The exporter will start subscribing to events from the configured Redfish servers and expose metrics on the specified metrics port.
 
-2. Configure your Prometheus server to scrape this endpoint: `http://[server IP]:2112/metrics`.
+- Configure your Prometheus server to scrape this endpoint: `http://[server IP]:2112/metrics`.
 
 For more detailed usage instructions, see the [User Guide](docs/user-guide.md).
 

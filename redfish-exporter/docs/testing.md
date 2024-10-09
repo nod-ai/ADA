@@ -6,15 +6,15 @@ The mock Redfish server simulates a Redfish-enabled device, allowing you to test
 
 ### Using Docker
 
-1. Run the following command to start the mock Redfish server:
+- Run the following command to start the mock Redfish server:
 
 ```bash
 docker run -d --net="host" --name redfish-mock dmtf/redfish-mockup-server:latest --port=8000
 ```
 
-Note: The `--net="host"` option allows the container to access the host network directly. This is useful for local testing but may not be suitable for all environments.
+Note: The `--net="host"` option allows the container to access the host network directly. This option is necessary when the listener app is running directly on the host.
 
-1. Verify that the server is running:
+- Verify that the server is running:
 
 ```bash
 curl http://localhost:8000/redfish/v1/
@@ -24,22 +24,91 @@ You should receive a JSON response representing the root of the Redfish service.
 
 ### Using Kubernetes
 
-1. Apply the Kubernetes configuration:
+- Apply the Kubernetes configuration:
 
 ```bash
 kubectl apply -k dev/redfish-mock
 ```
 
-1. Forward the service port to your local machine:
+- Forward the service port to your local machine:
 
 ```bash
 kubectl port-forward -n silo services/redfish-mock 8000:8000
 ```
 
-1. Verify that the server is running:
+- Verify that the server is running:
 
 ```bash
 curl http://localhost:8000/redfish/v1/
+```
+
+#### Testing a Subscription
+
+To manually create a subscription, create a JSON file (e.g. `data.json`) with the following content:
+
+```json
+{
+    "Destination":"http://localhost:8080/",
+    "Protocol":"Redfish",
+    "EventFormatType":"Event",
+    "IncludeOriginOfCondition":"true",
+    "EventTypes":[
+       "Alert",
+       "ResourceRemoved",
+       "ResourceAdded",
+       "ResourceUpdated",
+       "StatusChange"
+    ]
+ }
+```
+
+Send a POST request to register this subscription:
+
+```bash
+curl -d "@data.json" -X POST http://localhost:8000/redfish/v1/EventService/Subscriptions
+```
+
+#### Verifying a Subscription
+
+Verify the subscription is successfully created:
+
+```bash
+curl http://localhost:8000/redfish/v1/EventService/Subscriptions
+curl http://localhost:8000/redfish/v1/EventService/Subscriptions/[ID]
+```
+
+#### Trigger a Test Event
+
+You can trigger a test event by creating a file (e.g., `testevent.json`) with the following content:
+
+```json
+{
+    "EventType": "Alert",
+    "EventId": "TestEvent",
+    "EventTimestamp": "2024-09-30T10:10:10Z",
+    "Severity": "Warning",
+    "Message": "This is a test event message",
+    "MessageId": "Basic.1.5.SomethingIsHappening",
+    "MessageArgs": ["1", "slot 3"],
+    "OriginOfCondition": "/redfish/v1/Systems/1/Storage"
+}
+```
+
+Submit the test event with:
+
+```bash
+curl -d "@testevent.json" -X POST http://localhost:8000/redfish/v1/EventService/Actions/EventService.SubmitTestEvent
+```
+
+> [!WARNING]
+> Unlike what's shown [here](https://github.com/DMTF/Redfish-Mockup-Server/blob/main/public-rackmount1/EventService/SubmitTestEventActionInfo/index.json) all the fields are required by the mockup server. otherwise, the request will result in a BadRequest 400. check [here](https://github.com/DMTF/Redfish-Mockup-Server/blob/2d39eb14122337ceab0712a9610b1cd37c65f487/redfishMockupServer.py#L169) for more info.
+
+#### Delete a Subscription
+
+To delete a subscription, use its ID in a DELETE request:
+
+```bash
+curl -X DELETE http://localhost:8000/redfish/v1/EventService/Subscriptions/[ID]
 ```
 
 ## Integration Testing
@@ -68,8 +137,7 @@ This command will:
 - Start two mock Redfish servers using Docker
 - Run the integration tests
 - Clean up the test environment
-
-1. Monitor the output for test results and any error messages.
+- Monitor the output for test results and any error messages.
 
 ### Test Coverage
 
@@ -79,8 +147,6 @@ The integration tests cover the following scenarios:
 2. Event reception and processing
 3. Metric exposition
 4. SLURM integration (if enabled)
-
-[Placeholder: Add more specific test scenarios as they are implemented]
 
 ## Troubleshooting
 
@@ -98,8 +164,4 @@ docker logs redfish-mock
 kubectl logs -n silo deployment/redfish-mock
 ```
 
-- Verify that your firewall or security settings are not blocking the required network connections.
-
-[Placeholder: Add more troubleshooting steps based on common issues encountered during testing]
-
-If problems persist, please file an issue on the project's GitHub repository with detailed information about the error and your environment.
+- Verify that your firewall or security settings are not blocking the required network connections. If problems persist, please file an issue on the project's GitHub repository with detailed information about the error and your environment.
