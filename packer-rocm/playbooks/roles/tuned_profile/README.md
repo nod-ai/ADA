@@ -18,7 +18,7 @@ Role Variables
 Preview
 --------------
 
-Profile variables _(minified)_, see [our playbook](../../playbook.yml) for the most current example:
+Profile variables _(minified)_, see [our playbook](../../tuned.yml) for the most current example:
 
 ```yaml
 tuned_profile_name: amd_custom
