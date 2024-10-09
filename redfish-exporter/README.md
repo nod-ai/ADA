@@ -171,6 +171,11 @@ Note that SSL can be enabled using the provided dev certificate and key and `--s
 
 - **SLURM_CONTROL_NODE**: The hostname or IP address of the Slurm control node where the REST server is running.
 
+3. Run the exporter with `--enable-slurm` flag to enable slurm
+    ```sh
+    ./amd-redfish-exporter --enable-slurm
+    ```
+
 ### Integration Testing
 
 To run integration tests:
