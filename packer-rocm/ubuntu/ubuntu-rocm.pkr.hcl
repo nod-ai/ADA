@@ -78,7 +78,17 @@ build {
     extra_arguments = [
       "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
       "--scp-extra-args", "'-O'",
-      "-e", "packages=/tmp/packer-pkgs",  # search path populated by 'file' provisioner above
+      "-e", "packages=/tmp/packer-pkgs"  # search path populated by 'file' provisioner above
+    ]
+  }
+
+  provisioner "ansible" {
+    playbook_file = "${path.root}/../playbooks/tuned.yml"
+    user          = "ubuntu"
+    ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
+    extra_arguments = [  
+      "-e", "ansible_python_interpreter=/usr/bin/python3",
+      "--scp-extra-args", "'-O'"
     ]
   }
 

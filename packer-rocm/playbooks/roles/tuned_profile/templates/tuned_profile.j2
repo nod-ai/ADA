@@ -1,0 +1,10 @@
+{# template file for 'tuned.conf' profiles / the 'tuned_profile' role #}
+{{ ansible_managed | comment }}
+
+{% for section in tuned_profile_params | dict2items %}
+[{{ section.key }}]
+{% for param in section.value | dict2items %}
+{{ param.key }}={{ param.value }}
+{% endfor %}
+
+{% endfor %}

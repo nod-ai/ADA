@@ -27,9 +27,9 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
+	"github.com/nod-ai/ADA/redfish-exporter/metrics"
 	"github.com/nod-ai/ADA/redfish-exporter/slurm"
 )
 
@@ -217,12 +217,12 @@ func (s *Server) processRequest(AppConfig Config, conn net.Conn, req *http.Reque
 		log.Printf("Message Args: %v", messageArgs)
 		log.Printf("Origin Of Condition: %s", originOfCondition)
 		for _, triggerEvent := range AppConfig.TriggerEvents {
-			if strings.Contains(messageId, triggerEvent.MessageId) {
-				log.Printf("Matched Trigger Event: %s with action %s", triggerEvent.MessageId, triggerEvent.Action)
+			if severity == triggerEvent.Severity {
+				log.Printf("Matched Trigger Event: %s with action %s", triggerEvent.Severity, triggerEvent.Action)
 				// Sending event belongs to redfish_utils. Each server may have different slurm node associated, and redfish_servers has the info/map.
 				if s.slurmQueue != nil {
 					redfishServerInfo := getServerInfo(AppConfig.RedfishServers, fmt.Sprintf("https://%v", ip))
-					s.slurmQueue.Add(triggerEvent.Action, redfishServerInfo.SlurmNode)
+					s.slurmQueue.Add(redfishServerInfo.IP, redfishServerInfo.SlurmNode, triggerEvent.Severity, triggerEvent.Action)
 				}
 				break
 			}
@@ -235,8 +235,8 @@ func (s *Server) processRequest(AppConfig Config, conn net.Conn, req *http.Reque
 
 	// Update metrics using variables from metrics.go
 	timestamp := float64(time.Now().Unix())
-	eventCountMetric.WithLabelValues(ip, eventType).Inc()
-	eventProcessingTimeMetric.WithLabelValues(ip, eventType).Set(timestamp)
+	metrics.EventCountMetric.WithLabelValues(ip, eventType).Inc()
+	metrics.EventProcessingTimeMetric.WithLabelValues(ip, eventType).Set(timestamp)
 
 	// Send a 200 OK response
 	response := &http.Response{
