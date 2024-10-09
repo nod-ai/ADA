@@ -94,7 +94,7 @@ For a complete list of available metrics and their descriptions, see the [Metric
 
 ## Testing
 
-See [testing.md](testing.md) for information on using the Mock Server and Integration Testing.
+See [testing.md](docs/testing.md) for information on using the Mock Server and Integration Testing.
 
 ## Support
 
