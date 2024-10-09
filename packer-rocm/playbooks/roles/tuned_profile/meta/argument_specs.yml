@@ -1,0 +1,25 @@
+---
+argument_specs:
+  main:
+    short_description: Role to manage `tuned` profiles and Ansible facts
+    options:
+      tuned_profile_name:
+        required: true
+        type: str
+        description: "Name of the custom `tuned` profile to create."
+      tuned_profile_enable:
+        required: false
+        type: bool
+        description: "If the profile should be enabled with 'tuned-adm profile ...', assumed true"
+      tuned_profile_reboot:
+        required: false
+        type: bool
+        description: "If activating the profile requires (and gets) a reboot to become effective. Default is False. Intended for those with 'cmdline' options."
+      tuned_profile_scripts:
+        required: false
+        type: list
+        description: "Script files to copy from the controller/repository, supporting the profile."
+      tuned_profile_params:
+        required: true
+        type: dict
+        description: "Sections of 'tuned.conf' with each dictionary key being a plugin"

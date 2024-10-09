@@ -1,0 +1,18 @@
+---
+# this seems common; may deserve a dictionary sorted by 'ansible_os_family' if packaging drifts
+tuned_main_config: '/etc/tuned/tuned-main.conf'  # noqa: var-naming[no-role-prefix]
+
+# after v2.23.0, 'tuned' profiles received another subdirectory - it attempts to migrate if upgraded, we just follow
+tuned_profile_basedir: "{{ '/etc/tuned' if ansible_facts.packages['tuned'][0].version is version('2.23.0-1', '<') else '/etc/tuned/profiles' }}"
+
+# assume the profile being created should be enabled with 'tuned-adm profile ...'
+tuned_profile_enable: true
+
+# when enabling the custom profile, opt to reboot (ie: apply cmdline options); most do not require this - opt in
+tuned_profile_reboot: false
+
+# if the service should be restarted on template change, assume yes - allow opting out (ie: image builds)
+tuned_profile_restart: true
+
+# optional script files to copy into the profile directory
+tuned_profile_scripts: []
