@@ -84,6 +84,27 @@ For a complete list of configuration options, refer to the [Configuration Guide]
 ./amd-redfish-exporter --enable-slurm
 ```
 
+Note that SSL can be enabled using the provided dev certificate and key and `--ssl` flag.
+
+### Slurm Integration
+
+1. Follow [this](./api/README.md) guide for generating the Slurm REST API.
+
+2. Required configurations:
+
+- **SLURM_TOKEN**: Obtain the token by running the following command on the Slurm control node (where slurmrestd is running):
+    ```sh
+    scontrol token username=root lifespan=18000
+    ```
+    (`lifespan` is specified in seconds)
+
+- **SLURM_CONTROL_NODE**: The hostname or IP address of the Slurm control node where the REST server is running.
+
+3. Run the exporter with `--enable-slurm` flag to enable slurm
+    ```sh
+    ./amd-redfish-exporter --enable-slurm
+    ```
+
 - The exporter will start subscribing to events from the configured Redfish servers and expose metrics on the specified metrics port.
 
 - Configure your Prometheus server to scrape this endpoint: `http://[server IP]:2112/metrics`.

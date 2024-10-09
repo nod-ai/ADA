@@ -69,7 +69,7 @@ func main() {
 	// Subscribe the listener to the event stream for all servers
 	subscriptionMap, err := CreateSubscriptionsForAllServers(AppConfig.RedfishServers, AppConfig.SubscriptionPayload)
 	if err != nil {
-		log.Fatalf("Failed to create subscriptions: %v", err)
+		log.Fatal(err)
 	}
 
 	// Set up signal handling
@@ -105,7 +105,6 @@ func main() {
 	time.Sleep(time.Second)
 
 	// Unsubscribe the listener from all servers
-	log.Println("Unsubscribing from servers...")
 	DeleteSubscriptionsFromAllServers(AppConfig.RedfishServers, subscriptionMap)
 
 	cancel()
