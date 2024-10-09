@@ -15,7 +15,20 @@
     rocm_gpg_url: 'https://repo.radeon.com/rocm/rocm.gpg.key'
     rocm_reqs:
       common:
-        - dkms
+        - "autoconf"
+        - "curl"
+        - "dkms"
+        - "ethtool"
+        - "infiniband-diags"
+        - "libtool"
+        - "lldpd"
+        - "mdadm"
+        - "net-tools"
+        - "rdma-core"
+        - "strace"
+        - "unzip"
+        - "wget"
+        - "zip"
       Debian:
         - "linux-headers-{{ ansible_kernel }}"
         - "linux-modules-extra-{{ ansible_kernel }}"
