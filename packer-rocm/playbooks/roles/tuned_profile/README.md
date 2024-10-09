@@ -33,6 +33,7 @@ tuned_profile_params:
     cmdline_amdsre_debug: 'earlyprintk=ttyS1,keep'
     cmdline_amdsre_iommu: 'amd_iommu=on iommu=pt nokaslr'
     cmdline_amdsre_pci: 'pci=realloc=off pcie_aspm=off'
+    cmdline_amdsre_perf_security: 'msr.allow_writes=on'
   disableacs:  # scripts may get their own section names to avoid repeat limitations
     type: script
     script: '${i:PROFILE_DIR}/acs_disable.sh'
@@ -59,6 +60,7 @@ include=latency-performance
 cmdline_amdsre_debug=earlyprintk=ttyS1,keep
 cmdline_amdsre_iommu=amd_iommu=on iommu=pt nokaslr
 cmdline_amdsre_pci=pci=realloc=off pcie_aspm=off
+cmdline_amdsre_perf_security=msr.allow_writes=on
 
 [disableacs]
 type=script
