@@ -136,3 +136,5 @@
         state: present
         update_cache: true
       when: rocm_extras is defined
+
+# vim: ft=yaml.ansible
