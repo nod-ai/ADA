@@ -1,0 +1,28 @@
+---
+# handlers file for 'tuned_profile' role
+
+- name: Restart 'tuned' on profile or config change
+  become: true
+  ansible.builtin.service:
+    name: tuned
+    state: restarted
+  listen: tuned_restart
+  when: tuned_profile_restart is truthy(convert_bool=True)
+  tags:
+    - always
+
+- name: Re-gather facts on changes
+  ansible.builtin.setup:
+  listen: ansible_setup
+  tags:
+    - always
+
+- name: Reboot when enabling profile
+  ansible.builtin.reboot:
+    reboot_timeout: 1200
+    msg: "Rebooting host; will wait 20 minutes"
+  become: true
+  listen: tuned_handler_reboot
+  when: tuned_profile_reboot is truthy(convert_bool=True)
+  tags:
+    - always

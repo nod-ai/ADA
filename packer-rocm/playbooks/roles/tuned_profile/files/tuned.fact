@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""
+Provides Ansible with facts about the 'tuned' service on a host
+
+ie: current profile (if running), otherwise 'inactive'
+"""
+from os import path
+from json import dumps
+
+def readcm(file):
+    '''Toy function for file reading/content-stripping'''
+    with open(file, 'r', encoding='utf-8') as _f:
+        return _f.read().strip()
+
+def is_tuned_running():
+    '''Attempts to read the PID file for 'tuned' and /proc to report status'''
+    if not path.exists(PID_FILE):
+        return False
+
+    try:
+        pid = readcm(PID_FILE)
+        pidfile_content = readcm(f'/proc/{pid}/comm')
+    except FileNotFoundError:
+        return False
+
+    if pidfile_content == 'tuned':
+        return True
+    return False
+
+# the 'active' file exists even when the service is stopped; cannot indicate running state
+ACTIVE_FILE = '/etc/tuned/active_profile'
+PID_FILE = '/run/tuned/tuned.pid'
+TUNED_RUNNING = is_tuned_running()
+
+print(dumps({
+    "active": TUNED_RUNNING,
+    "selected_profile": readcm(ACTIVE_FILE) if TUNED_RUNNING else "inactive"
+}), flush=True)

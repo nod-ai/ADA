@@ -1,0 +1,120 @@
+---
+
+- name: Preparation block
+  when: prep_facts is not defined
+  block:  # skip considerable work if this role is applied multiple times in a play
+
+    - name: Ensure 'tuned' is installed
+      ansible.builtin.package:
+        name: tuned
+        state: present
+      become: true
+
+    - name: Ensure dynamic tuning is disabled
+      become: true
+      ansible.builtin.lineinfile:
+        path: "{{ tuned_main_config }}"
+        line: 'dynamic_tuning = 0'
+        regexp: '^dynamic_tuning.*='
+      notify: tuned_restart
+
+    - name: Ensure 'tuned' is enabled/running
+      become: true
+      ansible.builtin.service:
+        name: tuned
+        state: started
+        enabled: true
+
+    - name: Ensure '/etc/ansible/facts.d'
+      become: true
+      ansible.builtin.file:
+        state: directory
+        path: /etc/ansible/facts.d
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Ensure custom facts for 'tuned'
+      become: true
+      ansible.builtin.copy:
+        src: tuned.fact
+        dest: /etc/ansible/facts.d/tuned.fact
+        owner: root
+        group: root
+        mode: '0755'  # must be executable for all users
+      notify: ansible_setup  # if this role is run before others, re-read facts for their benefit w/ handler
+
+    # this tasks exists because 'tuned' constants point here on Ubuntu 22.04, yet non-existent:
+    #   $ grep CFG_FILES /usr/lib/python3/dist-packages/tuned/consts.py
+    #   GRUB2_CFG_FILES = ["/etc/grub2.cfg", "/etc/grub2-efi.cfg"]
+    - name: Ensure links for bootloader plugin (Ubuntu 22 only)
+      become: true
+      when:
+        - ansible_distribution == 'Ubuntu'
+        - (ansible_distribution_major_version | int) == 22
+      ansible.builtin.file:
+        dest: "{{ grubcfg }}"
+        src: ../boot/grub/grub.cfg
+        owner: root
+        group: root
+        state: link
+      loop:
+        - /etc/grub2-efi.cfg
+        - /etc/grub2.cfg
+      loop_control:
+        loop_var: grubcfg
+    # without, the 'bootloader' plugin is effectively broken!
+    # Debian has addressed this; Ubuntu/Canonical picked it up in 24.04.
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+      register: prep_facts
+
+# per-profile tasks follow
+
+- name: "Make directory for '{{ tuned_profile_name }}'"
+  become: true
+  ansible.builtin.file:
+    path: "{{ (tuned_profile_basedir, tuned_profile_name) | path_join }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copy supporting scripts
+  become: true
+  ansible.builtin.copy:
+    src: "{{ script }}"
+    dest: "{{ (tuned_profile_basedir, tuned_profile_name, script) | path_join }}"
+    mode: "0744"
+    owner: root
+    group: root
+  loop: "{{ tuned_profile_scripts }}"
+  loop_control:
+    loop_var: script
+
+- name: "Render '{{ tuned_profile_name }}'"
+  become: true
+  ansible.builtin.template:
+    src: tuned_profile.j2
+    dest: "{{ (tuned_profile_basedir, tuned_profile_name, 'tuned.conf') | path_join }}"
+    mode: '0644'
+    owner: root
+    group: root
+  notify: tuned_restart
+
+- name: Clear pending handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: "Enable '{{ tuned_profile_name }}'"
+  become: true
+  ansible.builtin.command: "tuned-adm profile {{ tuned_profile_name }}"
+  changed_when: "ansible_local['tuned']['selected_profile'] != tuned_profile_name"  # always try to set; report change based on prior facts
+  register: tunedadm
+  when: tuned_profile_enable is truthy(convert_bool=True)
+  notify: tuned_handler_reboot
+
+# preserve 'atomicity' of the role
+# if rebooting (not the default), do so *as part of the role* -- not at the end of the play
+- name: Flush reboot/wait handlers
+  ansible.builtin.meta: flush_handlers
