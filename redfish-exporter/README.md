@@ -1,128 +1,101 @@
-# README #
+# AMD Redfish Exporter
 
-The AMD Redfish Exporter is a Go server that subscribes to events and telemetry from a server with Redfish service enabled. It then exposes this data on a Prometheus-compatible metrics route for scraping.
+The AMD Redfish Exporter is a Go server that subscribes to events and telemetry from servers with Redfish service enabled. It exposes this data on a Prometheus-compatible metrics route for scraping. The exporter also integrates with SLURM to drain nodes when critical hardware events are detected.
 
-### Getting Started ###
+## Features
 
-Ensure you have Go 1.23 installed.
+- Subscribes to Redfish events from multiple servers
+- Processes and filters events based on configurable criteria
+- Exposes Prometheus-compatible metrics
+- Integrates with SLURM for node management
+- Supports SSL/TLS for secure communication
 
-To set up the server, run:
+## Installation
+
+### Prerequisites
+
+- Go 1.23 or later
+- SLURM (for node management functionality)
+
+### Building from source
+
+- Clone the repository:
+
 ```bash
-go run .
+git clone https://github.com/nod-ai/ADA.git
+cd ADA/redfish-exporter
 ```
 
-This will start a server that listens on port 8080 for events and port 2112 for metrics.
+- Build the project:
 
-To test it out, you can use:
 ```bash
-curl -X POST http://127.0.0.1:8080 \
-     -H "Content-Type: application/json" \
-     -H "Custom-Header: CustomValue" \
-     -d '{"EventType":"Alert","EventId":"TestEvent","EventTimestamp":"2024-09-30T10:10:10Z","Severity":"Warning","Message":"This is a test event message","MessageId":"Basic.1.5.SomethingIsHappening","MessageArgs":["1","slot 3"],"OriginOfCondition":"/redfish/v1/Systems/1/Storage"}'
+make build
 ```
-This will post some sample data.
 
-Next, retrieve the metrics with:
+- The binary will be created as `amd-redfish-exporter` in the current directory.
+
+### Using Docker
+
+A Dockerfile is provided to build and run the AMD Redfish Exporter in a container:
+
+- Build the Docker image:
+
 ```bash
-curl "http://127.0.0.1:2112/metrics"
+docker build -t amd-redfish-exporter .
 ```
-scroll to the end to see the metrics:
 
-```
-# TYPE promhttp_metric_handler_requests_total counter
-promhttp_metric_handler_requests_total{code="200"} 1
-promhttp_metric_handler_requests_total{code="500"} 0
-promhttp_metric_handler_requests_total{code="503"} 0
-```
-These metrics will update as you post more data.
+- Run the container:
 
-### Running the Mock Server locally ###
-To run the Redfish mock server locally, use the following `docker run` command:
 ```bash
-docker run -d --net="host" --name redfish-mock dmtf/redfish-mockup-server:latest --port=8000
+docker run -p 8080:8080 -p 2112:2112 amd-redfish-exporter
 ```
 
-[!IMPORTANT]
-The `--net="host"` option allows the program inside the Docker container to behave as if it's running directly on the host machine, enabling access to the listener endpoint. This is only needed if the applications are not on the same network (e.g., The listener app is running on the host).
+## Configuration
 
-You can create a subscription manually by creating a JSON file (e.g., `data.json`) with the following content:
-```json
-{
-    "Destination":"http://localhost:8080/",
-    "Protocol":"Redfish",
-    "EventFormatType":"Event",
-    "IncludeOriginOfCondition":"true",
-    "EventTypes":[
-       "Alert",
-       "ResourceRemoved",
-       "ResourceAdded",
-       "ResourceUpdated",
-       "StatusChange"
-    ]
- }
-```
+The AMD Redfish Exporter is configured using environment variables or a configuration file. Here are the main configuration options:
 
-Then send a POST request to create the subscription:
+- `LISTENER_IP`: IP address to listen on (default: "127.0.0.1")
+- `LISTENER_PORT`: Port to listen on for Redfish events (default: "8080")
+- `METRICS_PORT`: Port to expose Prometheus metrics (default: "2112")
+- `USE_SSL`: Enable SSL/TLS (default: "false")
+- `CERTFILE`: Path to SSL certificate file (required if USE_SSL is true)
+- `KEYFILE`: Path to SSL key file (required if USE_SSL is true)
+- `SLURM_TOKEN`: SLURM authentication token
+- `SLURM_CONTROL_NODE`: SLURM control node address
+- `REDFISH_SERVERS`: JSON array of Redfish server configurations
+- `SUBSCRIPTION_PAYLOAD`: JSON object defining the Redfish subscription parameters
+
+For a complete list of configuration options, refer to the [Configuration Guide](docs/configuration.md).
+
+## Usage
+
+1. Set up the configuration as described in the [Configuration](#configuration) section.
+
+2. Run the AMD Redfish Exporter:
+
 ```bash
-curl -d "@data.json" -X POST http://localhost:8000/redfish/v1/EventService/Subscriptions
+./amd-redfish-exporter
 ```
 
-Check if the subscription is created:
-```bash
-curl http://localhost:8000/redfish/v1/EventService/Subscriptions
-curl http://localhost:8000/redfish/v1/EventService/Subscriptions/[ID]
-```
+1. The exporter will start subscribing to events from the configured Redfish servers and expose metrics on the specified metrics port.
 
-To delete the subscription, send a DELETE request by specifying the subscription ID:
-```bash
-curl -X DELETE http://localhost:8000/redfish/v1/EventService/Subscriptions/[ID]
-```
+2. Configure your Prometheus server to scrape this endpoint: `http://[server IP]:2112/metrics`.
 
-To trigger test events, create a JSON file (e.g., `testevent.json`) with the following content:
-```json
-{
-    "EventType": "Alert",
-    "EventId": "TestEvent",
-    "EventTimestamp": "2024-09-30T10:10:10Z",
-    "Severity": "Warning",
-    "Message": "This is a test event message",
-    "MessageId": "Basic.1.5.SomethingIsHappening",
-    "MessageArgs": ["1", "slot 3"],
-    "OriginOfCondition": "/redfish/v1/Systems/1/Storage"
-}
-```
+For more detailed usage instructions, see the [User Guide](docs/user-guide.md).
 
-[!WARNING]
-Unlike what's shown [here](https://github.com/DMTF/Redfish-Mockup-Server/blob/main/public-rackmount1/EventService/SubmitTestEventActionInfo/index.json) all the fields are required by the mockup server. otherwise, the request will result in a BadRequest 400. check [here](https://github.com/DMTF/Redfish-Mockup-Server/blob/2d39eb14122337ceab0712a9610b1cd37c65f487/redfishMockupServer.py#L169) for more info.
+## Metrics
 
-Then, use the following command to send the test event:
-```bash
-curl -d "@testevent.json" -X POST http://localhost:8000/redfish/v1/EventService/Actions/EventService.SubmitTestEvent
-```
+The exporter provides the following metrics:
 
-### Running the Mock Server in kubernetes ###
-The Redfish Mockup Server handles Redfish requests against a mock setup. You can deploy it using the redfish-mock kustomize template, following the steps:
-```bash
-kubectl apply -k dev/redfish-mock
-```
+- `RedFishEvents_received`: Counter of Redfish events received
+- `RedFishEvents_processing_time`: Gauge of event processing time
 
-Once the server is running, expose the service locally using:
-```bash
-kubectl port-forward -n silo services/redfish-mock 8000
-```
-You can then query the Redfish endpoint with:
-```bash
-curl localhost:8000/redfish/v1
-```
-Note that SSL can be enabled using the provided dev certificate and key.
+For a complete list of available metrics and their descriptions, see the [Metrics Documentation](docs/metrics.md).
 
-### Integration Testing
+## Testing
 
-To run the integration tests, use: `make integration-test`
+See [testing.md](testing.md) for information on using the Mock Server and Integration Testing.
 
-This will:
-- Build the AMD Redfish Exporter
-- Spin up two mock Redfish servers using Docker
-- Test the exporter against these servers to ensure Redfish events are properly exported
-- Clean up the environment afterward
+## Support
 
+If you encounter any issues or have questions, please file an issue.
