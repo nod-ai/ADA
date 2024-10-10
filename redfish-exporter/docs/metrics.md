@@ -10,7 +10,7 @@ The AMD Redfish Exporter exposes the following Prometheus-compatible metrics:
 - **Description**: Total number of Redfish events received
 - **Labels**:
   - `SourceIP`: IP address of the Redfish server that sent the event
-  - `EventType`: Type of the Redfish event
+  - `Severity`: Severity of the Redfish event
 
 ### `RedFishEvents_processing_time`
 
