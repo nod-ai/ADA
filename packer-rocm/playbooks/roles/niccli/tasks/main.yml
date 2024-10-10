@@ -41,6 +41,12 @@
   when: (niccli_wanted is truthy(convert_bool=True))  # does not preclude archive collection tasks on the controller
   block:  # if used with many hosts [outside of Packer/image creation], individuals may opt out of 'niccli' via 'host_vars'. this means the URL must always be known [see defaults]
 
+    - name: 'Ensure Package Requirements'
+      ansible.builtin.package:
+        name: "{{ niccli_requirement }}"
+        state: present
+      loop: "{{ niccli_requirements['common'] + (niccli_requirements[ansible_os_family] | default([])) }}"
+
     - name: "Search for packages in '/tmp/niccli'"
       register: niccli_pkgs
       ansible.builtin.find:

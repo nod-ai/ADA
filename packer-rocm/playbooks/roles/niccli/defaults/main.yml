@@ -17,3 +17,37 @@ niccli_url: 'https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapt
 # install the CLI and driver by default, may opt out
 niccli_driver: true
 niccli_wanted: true
+
+niccli_requirements:  # mapped by 'ansible_os_family' fact
+  common:
+    - dkms
+    - pciutils
+    - libibumad-dev  # Used to build perftest with rocm enabled
+  Debian:
+    - build-essential
+    - ibverbs-providers
+    - ibverbs-utils
+    - libaio-dev
+    - libibverbs1
+    - libibverbs-dev
+    - libstdc++-12-dev
+    - libelf-dev
+    - libibumad-dev
+    - librdmacm-dev
+    - linux-headers-generic
+    - "linux-headers-{{ ansible_kernel }}"
+    - "linux-modules-extra-{{ ansible_kernel }}"
+    - rdmacm-utils
+  RedHat:
+    - '@Development Tools'  # group notation (@...) requires quoting
+    - kernel-headers
+    - kernel-devel-matched
+    - kernel-modules-extra
+    - gcc-toolset-12-libstdc++-devel  # this (or the next for libstdc++) may be superfluous
+    - libstdc++-devel
+    - libaio-devel
+    - libibumad
+    - libibverbs
+    - libibverbs-utils
+    - elfutils-libelf-devel
+    - librdmacm-utils
