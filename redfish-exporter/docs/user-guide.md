@@ -5,6 +5,7 @@
 ### Prerequisites
 
 - Go 1.23 or later
+- Docker
 - SLURM (for node management functionality)
 
 ### Building from Source

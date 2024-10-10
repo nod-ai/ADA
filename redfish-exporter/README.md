@@ -15,6 +15,7 @@ The AMD Redfish Exporter is a Go server that subscribes to events and telemetry 
 ### Prerequisites
 
 - Go 1.23 or later
+- Docker
 - SLURM (for node management functionality)
 
 ### Building from source
