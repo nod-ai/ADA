@@ -2,7 +2,7 @@ FROM busybox
 
 ENV UPDATED="2024-09-24"
 ENV DESCRIPTION="Redfish Event Listener/Exporter"
-ENV LISTENER_IP="127.0.0.1"
+ENV LISTENER_IP="0.0.0.0"
 ENV LISTENER_PORT="8080"
 ENV USE_SSL="false"
 ENV CERTFILE="path/to/certfile"

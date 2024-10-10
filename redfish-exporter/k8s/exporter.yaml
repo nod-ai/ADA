@@ -15,6 +15,7 @@ spec:
       containers:
         - name: redfish-exporter
           image: harbor.local/silo/redfish-exporter:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: events
