@@ -1,0 +1,85 @@
+---
+# we 'become' throughout the build; generally bad form, ensures consistent writability
+
+- name: Find 'libbnxt_re' source archive
+  ansible.builtin.find:
+    paths: '/tmp/niccli'
+    recurse: true
+    patterns:
+      - 'libbnxt_re-*.tar.gz'
+  register: find_libbnxt_re
+
+- name: Set 'libbnxt_re' archive path as fact
+  ansible.builtin.set_fact:
+    libbnxt_re_archive: "{{ (find_libbnxt_re.files | map(attribute='path')) | first }}"
+
+- name: Ensure build dir exists
+  ansible.builtin.file:
+    state: directory
+    path: /tmp/libbnxt_re
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+
+- name: Unpack 'libbnxt_re' archive
+  ansible.builtin.unarchive:
+    remote_src: true
+    src: "{{ libbnxt_re_archive }}"
+    dest: /tmp/libbnxt_re
+  become: true
+
+- name: Find 'autogen.sh'
+  ansible.builtin.find:
+    paths: /tmp/libbnxt_re
+    recurse: true
+    patterns:
+      - 'autogen.sh'
+  register: find_autogen
+
+- name: Set 'autogen.sh' directory as fact
+  ansible.builtin.set_fact:
+    autogen_dir: "{{ (find_autogen.files | map(attribute='path') | first) | dirname }}"
+
+- name: Run autogen
+  ansible.builtin.command:
+    cmd: /bin/sh autogen.sh
+    chdir: "{{ autogen_dir }}"
+    creates: "{{ (autogen_dir, 'configure') | path_join }}"
+  become: true
+
+- name: Configure
+  ansible.builtin.command:
+    cmd: /bin/sh configure
+    chdir: "{{ autogen_dir }}"
+    creates: "{{ (autogen_dir, 'config.status') | path_join }}"
+  become: true
+
+- name: Make
+  community.general.make:
+    chdir: "{{ autogen_dir }}"
+  become: true
+
+- name: Make all+install
+  community.general.make:
+    target: "{{ make_target }}"
+    chdir: "{{ autogen_dir }}"
+  become: true
+  loop: ['all', 'install']
+  loop_control: { loop_var: make_target }
+
+# protect source build from package updates, have 'dpkg' to move the file out of sight for 'ldconfig'/co.
+- name: "Divert 'libbnxt_re-rdmav34.so' from 'ibverbs-providers' (on Debian/derivatives)"
+  community.general.dpkg_divert:
+    path: '/usr/lib/x86_64-linux-gnu/libibverbs/libbnxt_re-rdmav34.so'
+    divert: /opt/usr.lib.x86_64-linux-gnu.libibverbs.libbnxt_re-rdmav34.so-divert
+  become: true
+  when: ansible_os_family in ['Debian']
+
+- name: Link 'libbnxt_re-rdmav34.so' to our compiled version
+  ansible.builtin.file:
+    state: link
+    dest: '/usr/lib/x86_64-linux-gnu/libibverbs/libbnxt_re-rdmav34.so'
+    src: '/usr/local/lib/libbnxt_re-rdmav34.so'
+    force: true  # unlink (remove) existing file, convert to link
+  become: true

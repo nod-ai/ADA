@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: Instinct Cluster Engineering
+  description: Downloads, unpacks, and installs the Broadcom 'niccli' utility
+  company: AMD
+  license: Apache-2.0
+  min_ansible_version: '2.10'  # maybe lower, this was tested
+  platforms:
+    - name: GenericLinux
+      versions: ['all']
+  galaxy_tags:
+    - broadcom
+    - niccli
+dependencies: [] # acts like an implicit import_role for other roles

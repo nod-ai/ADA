@@ -52,7 +52,7 @@ build {
     playbook_file = "${path.root}/../playbooks/rocm.yml"
     user          = "ubuntu"
     ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
-    extra_arguments = [  
+    extra_arguments = [
       "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
       "--scp-extra-args", "'-O'",
       "-e", "rocm_releases=${var.rocm_releases}",  # pass ROCm requests [release + packages]
@@ -65,9 +65,23 @@ build {
     playbook_file = "${path.root}/../playbooks/tuned.yml"
     user          = "ubuntu"
     ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
-    extra_arguments = [  
+    extra_arguments = [
       "-e", "ansible_python_interpreter=/usr/bin/python3",
       "--scp-extra-args", "'-O'"
+    ]
+  }
+
+  provisioner "ansible" {
+    playbook_file = "${path.root}/../playbooks/niccli.yml"
+    user          = "ubuntu"
+    ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
+    extra_arguments = [
+      "-e", "ansible_python_interpreter=/usr/bin/python3",
+      "--scp-extra-args", "'-O'",
+      "-e", "niccli_wanted=${var.niccli_wanted}",
+      "-e", "niccli_url=${var.niccli_url}",
+      "-e", "niccli_sum=${var.niccli_sum}",
+      "-e", "niccli_driver=${var.niccli_driver}"
     ]
   }
 

@@ -1,0 +1,104 @@
+---
+# tasks file for 'niccli' role
+# yamllint disable rule:line-length
+
+- name: Archive preparation
+  tags: ['archive', 'always']
+  block:
+    - name: Pull archive to controller
+      ansible.builtin.get_url:
+        url: "{{ niccli_url }}"
+        checksum: "{{ niccli_sum | default(omit) }}"
+        # pull destination file from URL; module would accept the dir/wastefully download (ignoring checksum)
+        dest: "{{ ('/tmp', (niccli_url | basename)) | path_join }}"
+        mode: '0644'
+      delegate_to: localhost
+      run_once: true  # noqa: run-once[task] - no guarantee w/ 'strategy: free'
+      tags:
+        - archive
+        - always
+
+    - name: Ensure directory for unpacking exists
+      ansible.builtin.file:  # 'unarchive' module is not capable of handling this
+        path: /tmp/niccli
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'  # these modes may seem unnecessary; in case umask or other facilities are restricted
+      become: true
+
+- name: Copy and unpack archive on compute hosts
+  ansible.builtin.unarchive:
+    copy: true
+    dest: "/tmp/niccli"  # subdirectory provides some safety; will be searching for DEBs and RPMs to install
+    src: "{{ ('/tmp', (niccli_url | basename)) | path_join }}"
+  become: true
+  tags:
+    - archive
+    - always
+
+- name: "Task block for 'niccli' preparation"
+  when: (niccli_wanted is truthy(convert_bool=True))  # does not preclude archive collection tasks on the controller
+  block:  # if used with many hosts [outside of Packer/image creation], individuals may opt out of 'niccli' via 'host_vars'. this means the URL must always be known [see defaults]
+
+    - name: "Search for packages in '/tmp/niccli'"
+      register: niccli_pkgs
+      ansible.builtin.find:
+        paths: '/tmp/niccli'
+        recurse: true
+        patterns:
+          - "{{ 'niccli*' + ansible_architecture + niccli_pkg_ext[ansible_os_family] }}"  # this is shipped as a binary; does mind the CPU arch
+          - "{{ 'sliff*dkms*' + niccli_pkg_anyarch[ansible_os_family] + niccli_pkg_ext[ansible_os_family] }}"  # this is shipped as source; does not mind arch
+          - "{{ ('bnxt*dkms*' + niccli_pkg_anyarch[ansible_os_family] + niccli_pkg_ext[ansible_os_family]) if niccli_driver is truthy(convert_bool=True) else omit }}"
+          # archives tend to include 'libbnxt_re' as an RPM [for many dists/releases] but no DEBs
+          - "{{ 'libbnxt_re*' + ansible_architecture + ('el' + ansible_distribution_major_version if ansible_os_family in ['RedHat'] else '') + niccli_pkg_ext[ansible_os_family] }}"
+          - "{{ 'netxtreme-peer-mem*' + niccli_pkg_anyarch[ansible_os_family] + niccli_pkg_ext[ansible_os_family] }}"  # provides 'peer_mem' interface, packaged as source - noarch
+        excludes:  # this considers the file base name only; not the path
+          - '*sles*'  # SUSE linux enterprise server
+          - '*debug*'  # packages with debug symbols
+
+    - name: 'Install packages [found by OS family]'
+      become: true
+      ansible.builtin.package:
+        name: "{{ candidate if ansible_os_family in ['RedHat'] else omit }}"
+        deb: "{{ candidate if ansible_os_family in ['Debian'] else omit }}"
+        disable_gpg_check: "{{ true if ansible_os_family in ['RedHat'] else omit }}"
+      # style and function: ensure 'bnxt-en-dkms' lands before 'bnxt-**re**-dkms' to resolve dependency
+      loop: "{{ (niccli_pkgs.files | map(attribute='path') | reject('search', 'aarch64')) | sort }}"
+      # reject 'aarch64'; search can be greedy. Broadcom archives may repeat arch-free packages in arch-specific directories
+      loop_control: { loop_var: candidate }
+
+    # Looping installation above was found to be necessary due to the issues outlined here:
+    #     https://github.com/ansible/ansible/issues/7513
+    #     https://github.com/ansible/ansible/issues/7863
+    #     https://github.com/ansible/ansible/pull/8292
+    # The 'package' module hands off to 'apt' or 'dnf' as appropriate. They do not handle iterables equally well.
+
+    - name: 'Ensure modules are loaded (when installing driver)'  # noqa: ignore-errors
+      become: true
+      community.general.modprobe:
+        name: "{{ module.name }}"
+        state: present
+        persistent: present  # may be superfluous - kernel is supposed to load this automatically (on boot, if applicable) - assumes reasonable dependency chain
+      loop:
+        - { name: bnxt_en }
+        - { name: bnxt_re }
+        - { name: ib_peer_mem, ignore_errors: true }  # only builds/loads when 'ib_peer_mem' is *not* part of the kernel
+      ignore_errors: "{{ module.ignore_errors | default(false) }}"
+      loop_control: { loop_var: module }
+      when: niccli_driver is truthy(convert_bool=True)
+
+    - name: 'Gather package facts'
+      ansible.builtin.package_facts:
+
+    - name: "Stat 'libbnxt_re-rdmav34.so'; absence requires build"
+      ansible.builtin.stat:
+        path: '/usr/local/lib/libbnxt_re-rdmav34.so'
+      register: libbnxt_re_stat
+
+    - name: "Include 'libbnxt_re' source-building tasks"
+      ansible.builtin.include_tasks:
+        file: libbnxt_re.yml
+      when:
+        - "'libbnxt_re' not in ansible_facts.packages"
+        - not libbnxt_re_stat.stat.exists

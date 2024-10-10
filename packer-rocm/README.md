@@ -74,6 +74,10 @@ The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it
 | `rocm_extras` | Packages to install _after_ `amdgpu-dkms` and _ROCm_. Also comma-separated. | _mesa-amdgpu-va-drivers_ |
 | `rocm_installed` | If _ROCm_ packages are installed. The `amdgpu` _driver_ and extras are always included. | `False` |
 | `rocm_builder_disk` | Space given to the builder VM; releases compound quickly. | _70G_ |
+| `niccli_wanted` | If [niccli](https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/Configuration-adapter/nic-cli-configuration-utility.html) is included in the image. | `True` |
+| `niccli_url` | The URL for the `niccli` archive. | [Link](https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip) |
+| `niccli_sum` | Checksum for validating `niccli_url`. | `sha256:1dd2a7c6978c978febfc08ef2f416b2745573848d45700737d4b1405d8e1ac35` |
+| `niccli_driver` | If the `bnxt_{en,re}` NIC drivers are included. | `True` |
 | `headless` | If the VNC window for the VM is _hidden_ during build. | `True` |
 | `kernel` | _MaaS_ images do not _typically_ include a kernel. Set this to include one. | _Ansible:_ `linux-generic`<br />_Manual:_ None |
 

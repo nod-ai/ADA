@@ -1,0 +1,23 @@
+---
+argument_specs:
+  main:
+    short_description: Downloads, unpacks, and installs the Broadcom 'niccli' utility
+    description:
+      - Downloads, unpacks, and installs the Broadcom 'niccli' utility
+    options:
+      niccli_url:
+        required: true
+        type: str
+        description: 'The download URL for the `niccli` package from Broadcom.'
+      niccli_sum:
+        required: false
+        type: str
+        description: 'Checksum to use for validating `niccli_url`. Example: `sha256:abcd1234`'
+      niccli_driver:
+        required: false
+        type: bool
+        description: "If the 'bnxt_{en,re}' drivers should be installed through OS-relevant packages and DKMS. Default `True`"
+      niccli_wanted:
+        required: false
+        type: bool
+        description: 'If `niccli` should be installed. Default `True`'
