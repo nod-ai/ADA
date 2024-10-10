@@ -9,7 +9,7 @@ ENV CERTFILE="path/to/certfile"
 ENV KEYFILE="path/to/keyfile"
 
 # At least these need to be configured when running this image
-ENV SERVERS=
+ENV REDFISH_SERVERS=
 ENV SUBSCRIPTION_PAYLOAD=
 
 COPY amd-redfish-exporter /bin/redfish_exporter

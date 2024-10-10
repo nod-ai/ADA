@@ -22,10 +22,10 @@ import (
 
 var EventCountMetric = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
-		Name: "RedFishEvents_recieved",
+		Name: "RedFishEvents_received",
 		Help: "Total number of events processed",
 	},
-	[]string{"SourceIP", "EventType"}, // Define the labels you want to use
+	[]string{"SourceIP", "Severity"}, // Define the labels you want to use
 )
 
 var EventProcessingTimeMetric = prometheus.NewGaugeVec(
@@ -33,7 +33,7 @@ var EventProcessingTimeMetric = prometheus.NewGaugeVec(
 		Name: "RedFishEvents_processing_time",
 		Help: "Time taken to process events",
 	},
-	[]string{"SourceIP", "EventType"}, // Define the labels you want to use
+	[]string{"SourceIP", "Severity"}, // Define the labels you want to use
 )
 
 var SlurmAPIFailureMetric = prometheus.NewCounterVec(
