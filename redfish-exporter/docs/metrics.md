@@ -4,7 +4,7 @@ The AMD Redfish Exporter exposes the following Prometheus-compatible metrics:
 
 ## Event Metrics
 
-### `RedFishEvents_recieved`
+### `RedFishEvents_received`
 
 - **Type**: Counter
 - **Description**: Total number of Redfish events received
