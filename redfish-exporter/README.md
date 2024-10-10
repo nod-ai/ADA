@@ -1,161 +1,95 @@
-# README #
+# AMD Redfish Exporter
 
-The AMD Redfish Exporter is a Go server that subscribes to events and telemetry from a server with Redfish service enabled. It then exposes this data on a Prometheus-compatible metrics route for scraping. Additionally, it can initiate specific Slurm actions in response to certain events.
+The AMD Redfish Exporter is a Go server that subscribes to events and telemetry from servers with Redfish service enabled. It exposes this data on a Prometheus-compatible metrics route for scraping. The exporter also integrates with SLURM to drain nodes when critical hardware events are detected.
 
-## Getting Started
+## Features
+
+- Subscribes to Redfish events from multiple servers
+- Processes and filters events based on configurable criteria
+- Exposes Prometheus-compatible metrics
+- Integrates with SLURM for node management
+- Supports SSL/TLS for secure communication
+
+## Installation
 
 ### Prerequisites
+
+- Go 1.23 or later
 - Docker
-- Go 1.23+
+- SLURM (for node management functionality)
 
-### Running the Redfish Mock Server Locally
-To test the exporter locally, you can deploy a Redfish mock server using Docker:
+### Building from source
+
+- Clone the repository:
+
 ```bash
-docker run -d --net="host" --name redfish-mock dmtf/redfish-mockup-server:latest --port=8000
+git clone https://github.com/nod-ai/ADA.git
+cd ADA/redfish-exporter
 ```
 
-> [!IMPORTANT]
-> The `--net="host"` option allows the containerized application to share the host's networking, facilitating access to the listener endpoint. This configuration is essential if the applications aren't on the same network (e.g., when the listener app runs on the host).
+- Build the project:
 
-#### Testing a Subscription
-To manually create a subscription, create a JSON file (e.g. `data.json`) with the following content:
-```json
-{
-    "Destination":"http://localhost:8080/",
-    "Protocol":"Redfish",
-    "EventFormatType":"Event",
-    "IncludeOriginOfCondition":"true",
-    "EventTypes":[
-       "Alert",
-       "ResourceRemoved",
-       "ResourceAdded",
-       "ResourceUpdated",
-       "StatusChange"
-    ]
- }
-```
-
-Send a POST request to register this subscription:
 ```bash
-curl -d "@data.json" -X POST http://localhost:8000/redfish/v1/EventService/Subscriptions
+make build
 ```
 
-Verify the subscription is successfully created:
+- The binary will be created as `amd-redfish-exporter` in the current directory.
+
+### Using Docker
+
+A Dockerfile is provided to build and run the AMD Redfish Exporter in a container:
+
+- Build the Docker image:
+
 ```bash
-curl http://localhost:8000/redfish/v1/EventService/Subscriptions
-curl http://localhost:8000/redfish/v1/EventService/Subscriptions/[ID]
+docker build -t amd-redfish-exporter .
 ```
 
-You can trigger a test event by creating a file (e.g., `testevent.json`) with the following content:
-```json
-{
-    "EventType": "Alert",
-    "EventId": "TestEvent",
-    "EventTimestamp": "2024-09-30T10:10:10Z",
-    "Severity": "Warning",
-    "Message": "This is a test event message",
-    "MessageId": "Basic.1.5.SomethingIsHappening",
-    "MessageArgs": ["1", "slot 3"],
-    "OriginOfCondition": "/redfish/v1/Systems/1/Storage"
-}
-```
+- Run the container:
 
-Submit the test event with:
 ```bash
-curl -d "@testevent.json" -X POST http://localhost:8000/redfish/v1/EventService/Actions/EventService.SubmitTestEvent
+docker run --env-file .env -p 8080:8080 -p 2112:2112 amd-redfish-exporter
 ```
 
-> [!WARNING]
-> Unlike what's shown [here](https://github.com/DMTF/Redfish-Mockup-Server/blob/main/public-rackmount1/EventService/SubmitTestEventActionInfo/index.json) all the fields are required by the mockup server. otherwise, the request will result in a BadRequest 400. check [here](https://github.com/DMTF/Redfish-Mockup-Server/blob/2d39eb14122337ceab0712a9610b1cd37c65f487/redfishMockupServer.py#L169) for more info.
+Note: The `--env-file` flag takes a filename as an argument and expects each line to be in the `VAR=VAL` format. The `.env` file variables should not be wrapped in quotes. Example:
 
-To delete a subscription, use its ID in a DELETE request:
 ```bash
-curl -X DELETE http://localhost:8000/redfish/v1/EventService/Subscriptions/[ID]
+SUBSCRIPTION_PAYLOAD={"Destination": "http://host.docker.internal:8080", "EventTypes": ["Alert", "StatusChange"], "Protocol": "Redfish", "Context": "YourContextData"}
+REDFISH_SERVERS=[{"ip": "http://<ip>:<port>", "username": "<username>", "password": "<password>", "loginType": "Session", "slurmNode": "Node1"}]
 ```
 
-### Running the app
+## Configuration
 
-Follow the [Slurm API setup guide](./api/README.md) to configure Slurm API integration.
+The AMD Redfish Exporter is configured using environment variables or a configuration file. Here are the main configuration options:
 
-Update the `.env` file with your Redfish server details.
+- `LISTENER_IP`: IP address to listen on (default: "127.0.0.1")
+- `LISTENER_PORT`: Port to listen on for Redfish events (default: "8080")
+- `METRICS_PORT`: Port to expose Prometheus metrics (default: "2112")
+- `USE_SSL`: Enable SSL/TLS (default: "false")
+- `CERTFILE`: Path to SSL certificate file (required if USE_SSL is true)
+- `KEYFILE`: Path to SSL key file (required if USE_SSL is true)
+- `SLURM_TOKEN`: SLURM authentication token
+- `SLURM_CONTROL_NODE`: SLURM control node address
+- `REDFISH_SERVERS`: JSON array of Redfish server configurations
+- `SUBSCRIPTION_PAYLOAD`: JSON object defining the Redfish subscription parameters
 
-Start the AMD Redfish Exporter:
+For a complete list of configuration options, refer to the [Configuration Guide](docs/configuration.md).
+
+## Usage
+
+- Set up the configuration as described in the [Configuration](#configuration) section.
+
+- Run the AMD Redfish Exporter:
+
 ```bash
-go run .
+./amd-redfish-exporter
 ```
 
-The server listens on:
-- Port 8080 for Redfish event handling.
-- Port 2112 for Prometheus metrics.
+- The exporter will start subscribing to events from the configured Redfish servers and expose metrics on the specified metrics port.
 
-> [!WARNING]
-> Ensure the `Destination` in the `SUBSCRIPTION_PAYLOAD`  is set to `http://localhost:8080` for local testing.
+- Configure your Prometheus server to scrape this endpoint: `http://[server IP]:2112/metrics`.
 
-The server will automatically subscribe to the Redfish servers defined in `REDFISH_SERVERS`.
-Verify the subscription:
-```bash
-curl http://localhost:8000/redfish/v1/EventService/Subscriptions
-```
-
-Verify the event handling:
-```bash
-curl -d "@testevent.json" -X POST http://localhost:8000/redfish/v1/EventService/Actions/EventService.SubmitTestEvent
-```
-
-This will trigger a test event on the Redfish server, and you should see it reflected in the listener logs.
-
-Currently, the exporter dynamically generates two metrics per Redfish event. To define additional metrics, modify the [metrics](./metrics/metrics.go) file.
-
-To view the metrics:
-```bash
-curl "http://127.0.0.1:2112/metrics"
-```
-
-You should see output similar to:
-```
-# HELP RedFishEvents_processing_time Time taken to process events
-# TYPE RedFishEvents_processing_time gauge
-RedFishEvents_processing_time{EventType="Alert",SourceIP="127.0.0.1"} 1.728467499e+09
-# HELP RedFishEvents_recieved Total number of events processed
-# TYPE RedFishEvents_recieved counter
-RedFishEvents_recieved{EventType="Alert",SourceIP="127.0.0.1"} 1
-```
-These metrics will update as more data is processed.
-
-### Running with SSL
-
-Generate a Self-Signed Certificate:
-```bash
-# Create a Private Key
-openssl genrsa -out cert.key 4096
-
-# Generate a Certificate Signing Request (CSR)
-openssl req -new -key cert.key -out csr.pem
-
-# Sign the CSR to create the SSL Certificate
-openssl x509 -req -days 365 -in csr.pem -signkey cert.key -out cert.crt
-```
-
-Set the path to these certificates in your `.env` file and enable SSL by setting `USE_SSL` to `True`.
-
-### Running the Mock Server in kubernetes
-
-Deploy the Redfish Mockup Server in Kubernetes using the provided kustomize template:
-```bash
-kubectl apply -k dev/redfish-mock
-```
-
-Once deployed, expose the service locally:
-```bash
-kubectl port-forward -n silo services/redfish-mock 8000
-```
-
-You can then interact with the mock server:
-```bash
-curl localhost:8000/redfish/v1
-```
-
-Note that SSL can be enabled using the provided dev certificate and key and `--ssl` flag.
+Note that SSL can be enabled using the provided dev certificate and key and `--ssl` flag. For more detailed usage instructions, see the [User Guide](docs/user-guide.md).
 
 ### Slurm Integration
 
@@ -164,27 +98,34 @@ Note that SSL can be enabled using the provided dev certificate and key and `--s
 2. Required configurations:
 
 - **SLURM_TOKEN**: Obtain the token by running the following command on the Slurm control node (where slurmrestd is running):
-    ```sh
-    scontrol token username=root lifespan=18000
-    ```
-    (`lifespan` is specified in seconds)
+
+```sh
+scontrol token username=root lifespan=18000
+```
+
+(`lifespan` is specified in seconds)
 
 - **SLURM_CONTROL_NODE**: The hostname or IP address of the Slurm control node where the REST server is running.
 
-3. Run the exporter with `--enable-slurm` flag to enable slurm
-    ```sh
-    ./amd-redfish-exporter --enable-slurm
-    ```
+3. Run the AMD Redfish Exporter with `--enable-slurm` flag to enable SLURM integration:
 
-### Integration Testing
-
-To run integration tests:
 ```bash
-make integration-test
+./amd-redfish-exporter --enable-slurm
 ```
 
-This will:
-- Build the AMD Redfish Exporter
-- Spin up two mock Redfish servers using Docker
-- Test that events are correctly exported as Prometheus metrics.
-- Clean up the test environment.
+## Metrics
+
+The exporter provides the following metrics:
+
+- `RedFishEvents_received`: Counter of Redfish events received
+- `RedFishEvents_processing_time`: Gauge of event processing time
+
+For a complete list of available metrics and their descriptions, see the [Metrics Documentation](docs/metrics.md).
+
+## Testing
+
+See [testing.md](docs/testing.md) for information on using the Mock Server and Integration Testing.
+
+## Support
+
+If you encounter any issues or have questions, please file an issue.
