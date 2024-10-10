@@ -20,6 +20,27 @@ The AMD Redfish Exporter exposes the following Prometheus-compatible metrics:
   - `SourceIP`: IP address of the Redfish server that sent the event
   - `Severity`: Severity of the Redfish event
 
+### `SlurmAPI_success`
+
+- **Type**: Gauge
+- **Description**: Total number of Slurm API calls that succeeded
+- **Labels**:
+  - `SourceIP`: IP address of the SLURM node
+  - `SlurmNodeName`: Node name of the SLURM node
+  - `EventSeverity`: Severity of the event
+  - `EventAction`: Action taken
+
+### `SlurmAPI_failure`
+
+- **Type**: Gauge
+- **Description**: Total number of Slurm API calls that failed
+- **Labels**:
+  - `SourceIP`: IP address of the SLURM node
+  - `SlurmNodeName`: Node name of the SLURM node
+  - `EventSeverity`: Severity of the event
+  - `EventAction`: Action taken
+
+
 ## Accessing Metrics
 
 Metrics are exposed on the `/metrics` endpoint. By default, this is available at `http://localhost:2112/metrics`.
