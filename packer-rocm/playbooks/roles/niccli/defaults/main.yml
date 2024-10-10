@@ -22,7 +22,6 @@ niccli_requirements:  # mapped by 'ansible_os_family' fact
   common:
     - dkms
     - pciutils
-    - libibumad-dev  # Used to build perftest with rocm enabled
   Debian:
     - build-essential
     - ibverbs-providers
