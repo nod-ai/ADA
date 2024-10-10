@@ -72,9 +72,9 @@ The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it
 
 | Variable | Description | Default |
 |:----------:|-------------|:---------:|
-| `rocm_releases` | One or more versions to include _[as a comma-separated string]_. Newest selects the `amdgpu` driver. | _6.2.2_ |
+| `rocm_releases` | One or more versions to include _[as a comma-separated string]_.<br/>Newest selects the `amdgpu` driver. | _6.2.2_ |
 | `rocm_extras` | Packages to install _after_ `amdgpu-dkms` and _ROCm_. Also comma-separated. | _mesa-amdgpu-va-drivers_ |
-| `rocm_installed` | If _ROCm_ packages are installed. The `amdgpu` _driver_ and extras are always included. | `False` |
+| `rocm_installed` | If _ROCm_ packages are installed.<br/>The `amdgpu` _driver_ and extras are always included. | `False` |
 | `rocm_builder_disk` | Space given to the builder VM; releases compound quickly. | _70G_ |
 | `niccli_wanted` | If [niccli](https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/Configuration-adapter/nic-cli-configuration-utility.html) is included in the image. | `True` |
 | `niccli_url` | The URL for the _Broadcom_ `niccli` installation archive. | [Link](https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip) |
