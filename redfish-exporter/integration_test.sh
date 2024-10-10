@@ -127,7 +127,7 @@ check_metric() {
     fi
 }
 
-check_metric "RedFishEvents_recieved"
+check_metric "RedFishEvents_received"
 check_metric "RedFishEvents_processing_time"
 check_metric "SlurmAPI_failure"
 check_metric "SlurmAPI_success"

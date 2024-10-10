@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: redfish-exporter-configmap
 data:
-  redfish-servers: '[{"ip": "http://redfish-mock.silo.svc.cluster.local:8000", "username": "Username1", "password": "Password1", "loginType": "Session"}]'
+  redfish-servers: '[{"ip": "http://redfish-mock.silo.svc.cluster.local:8000", "username": "Username1", "password": "Password1", "loginType": "Session", "slurmNode": "Node1"}]'
   subscription-payload: |
     {
       "Destination": "http://redfish-exporter.silo.svc.cluster.local:8080",
