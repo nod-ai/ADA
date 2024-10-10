@@ -41,6 +41,8 @@ The `REDFISH_SERVERS` environment variable should contain a JSON array of object
 ]
 ```
 
+**NOTE:** Ensure the node name provided in `REDFISH_SERVERS` matches the SLURM node configuration. If the SLURM node name is entered incorrectly the node drain operation will fail.
+
 ## Subscription Payload
 
 The `SUBSCRIPTION_PAYLOAD` environment variable should contain a JSON object with the following structure:
