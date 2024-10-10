@@ -25,7 +25,7 @@ The AMD Redfish Exporter exposes the following Prometheus-compatible metrics:
 - **Type**: Gauge
 - **Description**: Total number of Slurm API calls that succeeded
 - **Labels**:
-  - `SourceIP`: IP address of the SLURM node
+  - `SourceIP`: IP address of the Redfish server that sent the event
   - `SlurmNodeName`: Node name of the SLURM node
   - `EventSeverity`: Severity of the event
   - `EventAction`: Action taken
@@ -35,7 +35,7 @@ The AMD Redfish Exporter exposes the following Prometheus-compatible metrics:
 - **Type**: Gauge
 - **Description**: Total number of Slurm API calls that failed
 - **Labels**:
-  - `SourceIP`: IP address of the SLURM node
+  - `SourceIP`: IP address of the Redfish server that sent the event
   - `SlurmNodeName`: Node name of the SLURM node
   - `EventSeverity`: Severity of the event
   - `EventAction`: Action taken
