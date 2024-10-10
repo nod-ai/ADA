@@ -79,13 +79,17 @@ For a complete list of configuration options, refer to the [Configuration Guide]
 
 - Set up the configuration as described in the [Configuration](#configuration) section.
 
-- Run the AMD Redfish Exporter with `--enable-slurm` flag to enable SLURM integration:
+- Run the AMD Redfish Exporter:
 
 ```bash
-./amd-redfish-exporter --enable-slurm
+./amd-redfish-exporter
 ```
 
-Note that SSL can be enabled using the provided dev certificate and key and `--ssl` flag.
+- The exporter will start subscribing to events from the configured Redfish servers and expose metrics on the specified metrics port.
+
+- Configure your Prometheus server to scrape this endpoint: `http://[server IP]:2112/metrics`.
+
+Note that SSL can be enabled using the provided dev certificate and key and `--ssl` flag. For more detailed usage instructions, see the [User Guide](docs/user-guide.md).
 
 ### Slurm Integration
 
@@ -94,23 +98,20 @@ Note that SSL can be enabled using the provided dev certificate and key and `--s
 2. Required configurations:
 
 - **SLURM_TOKEN**: Obtain the token by running the following command on the Slurm control node (where slurmrestd is running):
-    ```sh
-    scontrol token username=root lifespan=18000
-    ```
-    (`lifespan` is specified in seconds)
+
+```sh
+scontrol token username=root lifespan=18000
+```
+
+(`lifespan` is specified in seconds)
 
 - **SLURM_CONTROL_NODE**: The hostname or IP address of the Slurm control node where the REST server is running.
 
-3. Run the exporter with `--enable-slurm` flag to enable slurm
-    ```sh
-    ./amd-redfish-exporter --enable-slurm
-    ```
+3. Run the AMD Redfish Exporter with `--enable-slurm` flag to enable SLURM integration:
 
-- The exporter will start subscribing to events from the configured Redfish servers and expose metrics on the specified metrics port.
-
-- Configure your Prometheus server to scrape this endpoint: `http://[server IP]:2112/metrics`.
-
-For more detailed usage instructions, see the [User Guide](docs/user-guide.md).
+```bash
+./amd-redfish-exporter --enable-slurm
+```
 
 ## Metrics
 
