@@ -1,0 +1,12 @@
+---
+# vars file for niccli
+#
+# map for non-specific system architectures when considering OS families and package name templates
+niccli_pkg_anyarch:
+  Debian: 'all'
+  RedHat: 'noarch'
+
+# map for file extensions when considering OS families and package name templates
+niccli_pkg_ext:
+  Debian: '.deb'
+  RedHat: '.rpm'

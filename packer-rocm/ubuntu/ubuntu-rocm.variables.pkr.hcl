@@ -27,6 +27,30 @@ variable "rocm_builder_disk" {
   description = "amdgpu and ROCm releases demand considerable space. Layout in 'user-data-rocm' will claim all of this"
 }
 
+variable "niccli_wanted" {
+  type = string
+  default = "true"
+  description = "If 'niccli' (Broadcom) is included in the image"
+}
+
+variable "niccli_url" {
+  type = string
+  default = "https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip"
+  description = "The URL for the `niccli` archive."
+}
+
+variable "niccli_sum" {
+  type = string
+  default = "sha256:1dd2a7c6978c978febfc08ef2f416b2745573848d45700737d4b1405d8e1ac35"
+  description = "Checksum for validating `niccli_url`."
+}
+
+variable "niccli_driver" {
+  type = string
+  default = "true"
+  description = "If the `bnxt_{en,re}` NIC drivers are included."
+}
+
 packer {
   required_plugins {
     ansible = {
