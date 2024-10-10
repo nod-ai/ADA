@@ -13,6 +13,7 @@ project.
 * [packer](https://developer.hashicorp.com/packer/docs/install)
 * `ansible`: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
 * `qemu`
+* `xorriso` or `genisoimage`
 * `rsync`
 * `git`
 
