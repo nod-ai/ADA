@@ -36,6 +36,16 @@ source "qemu" "rocm" {
 build {
   sources = ["source.qemu.rocm"]
 
+  # docs suggest destination be made first with 'shell' when copying directories to avoid non-determinism
+  provisioner "shell" {
+    inline = ["mkdir /tmp/packer-pkgs"]
+  }
+
+  provisioner "file" {
+    destination = "/tmp/packer-pkgs"
+    source = "${path.root}/../packages/"
+  }
+
   provisioner "file" {
     destination = "/tmp/curtin-hooks"
     source      = "${path.root}/scripts/curtin-hooks"
@@ -72,6 +82,17 @@ build {
   }
 
   provisioner "ansible" {
+    playbook_file = "${path.root}/../playbooks/package-globber.yml"
+    user          = "ubuntu"
+    ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
+    extra_arguments = [
+      "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
+      "--scp-extra-args", "'-O'",
+      "-e", "packages=/tmp/packer-pkgs"  # search path populated by 'file' provisioner above
+    ]
+  }
+
+  provisioner "ansible" {
     playbook_file = "${path.root}/../playbooks/niccli.yml"
     user          = "ubuntu"
     ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
@@ -82,6 +103,16 @@ build {
       "-e", "niccli_url=${var.niccli_url}",
       "-e", "niccli_sum=${var.niccli_sum}",
       "-e", "niccli_driver=${var.niccli_driver}"
+    ]
+  }
+
+  provisioner "ansible" {
+    playbook_file = "${path.root}/../playbooks/tuned.yml"
+    user          = "ubuntu"
+    ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
+    extra_arguments = [  
+      "-e", "ansible_python_interpreter=/usr/bin/python3",
+      "--scp-extra-args", "'-O'"
     ]
   }
 
