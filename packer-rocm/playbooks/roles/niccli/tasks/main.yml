@@ -47,6 +47,7 @@
         state: present
       loop: "{{ niccli_requirements['common'] + (niccli_requirements[ansible_os_family] | default([])) }}"
       loop_control: { loop_var: requirement }
+      become: true
 
     - name: "Search for packages in '/tmp/niccli'"
       register: niccli_pkgs
