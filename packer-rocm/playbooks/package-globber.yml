@@ -31,5 +31,10 @@
       ansible.builtin.package:  # RE: unusual templating - file paths don't work as well for 'name' on Debian/derivatives, requiring 'deb'
         deb: "{{ item if ansible_os_family in ['Debian'] else omit }}"
         name: "{{ item if ansible_os_family in ['RedHat'] else omit }}"
+        disable_gpg_check: "{{ true if ansible_os_family in ['RedHat'] else omit }}"
         state: present
       loop: "{{ found_pkgs }}"
+      # RE: loop, see below for more. in short: iterables are treated as literal
+      #     https://github.com/ansible/ansible/issues/7513
+      #     https://github.com/ansible/ansible/issues/7863
+      #     https://github.com/ansible/ansible/pull/8292
