@@ -27,7 +27,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"time"
 
 	"github.com/nod-ai/ADA/redfish-exporter/metrics"
 	"github.com/nod-ai/ADA/redfish-exporter/slurm"
@@ -198,12 +197,13 @@ func (s *Server) processRequest(AppConfig Config, conn net.Conn, req *http.Reque
 
 	// Log the extracted information
 	var eventType string
+	var severity string
 	log.Printf("Method: %s", method)
 	log.Printf("Headers: %v", headers)
 	for _, event := range p.Events {
 		eventType = event.EventType
 		eventId := event.EventId
-		severity := event.Severity
+		severity = event.Severity
 		message := event.Message
 		messageId := event.MessageId
 		messageArgs := event.MessageArgs
@@ -234,9 +234,8 @@ func (s *Server) processRequest(AppConfig Config, conn net.Conn, req *http.Reque
 	*eventCount++
 
 	// Update metrics using variables from metrics.go
-	timestamp := float64(time.Now().Unix())
-	metrics.EventCountMetric.WithLabelValues(ip, eventType).Inc()
-	metrics.EventProcessingTimeMetric.WithLabelValues(ip, eventType).Set(timestamp)
+	metrics.EventCountMetric.WithLabelValues(ip, severity).Inc()
+	metrics.EventProcessingTimeMetric.WithLabelValues(ip, severity).SetToCurrentTime()
 
 	// Send a 200 OK response
 	response := &http.Response{
