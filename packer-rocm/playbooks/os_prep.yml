@@ -15,7 +15,7 @@
         # placing this in '/etc' precedes '/usr' or '/lib', overriding packages/enduring updates; see 'man 7 udev'
         path: /etc/udev/rules.d/60-rdma-persistent-naming.rules
         regexp: '^ACTION=="add", SUBSYSTEM=="infiniband",.* PROGRAM="rdma_rename'
-        line: |
+        line: >-
           ACTION=="add", SUBSYSTEM=="infiniband", KERNEL!="hfi1*", PROGRAM="rdma_rename %k {{ os_rdma_rename_mode }}"
         create: true
         owner: root
