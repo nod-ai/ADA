@@ -22,14 +22,16 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
 
 const (
-	DefaultListenerPort = "8080"
-	DefaultMetricsPort  = "2112"
-	DefaultUseSSL       = "false"
+	DefaultListenerPort   = "8080"
+	DefaultMetricsPort    = "2112"
+	DefaultUseSSL         = "false"
+	DefaultSeverityConfig = "Fatal,Critical,Informational"
 )
 
 type Config struct {
@@ -52,6 +54,7 @@ type Config struct {
 	SubscriptionPayload SubscriptionPayload
 	RedfishServers      []RedfishServer
 	TriggerEvents       []TriggerEvent
+	PrometheusConfig    PrometheusConfig
 	context             *tls.Config
 	eventCount          int
 	dataBuffer          []byte
@@ -60,6 +63,10 @@ type Config struct {
 type TriggerEvent struct {
 	Severity string `json:"Severity"`
 	Action   string `json:"Action"`
+}
+
+type PrometheusConfig struct {
+	Severity []string `json:"Severity"`
 }
 
 func setupConfig() Config {
@@ -123,6 +130,18 @@ func setupConfig() Config {
 			log.Fatalf("Failed to unmarshal TRIGGER_EVENTS: %v", err)
 		}
 	}
+
+	prometheusConfigJSON := os.Getenv("PROMETHEUS_CONFIG")
+	if prometheusConfigJSON != "" {
+		err = json.Unmarshal([]byte(prometheusConfigJSON), &AppConfig.PrometheusConfig)
+		if err != nil {
+			log.Fatalf("Failed to unmarshal PROMETHEUS_CONFIG: %v", err)
+		}
+	}
+	if prometheusConfigJSON == "" {
+		AppConfig.PrometheusConfig.Severity = strings.Split(DefaultSeverityConfig, ",")
+	}
+
 	// Read and parse the REDFISH_SERVERS environment variable
 	redfishServersJSON := os.Getenv("REDFISH_SERVERS")
 	if redfishServersJSON == "" {
