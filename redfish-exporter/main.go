@@ -97,7 +97,7 @@ func main() {
 	}()
 
 	// Initialize Prometheus metrics with default values
-	initializeMetrics(AppConfig.RedfishServers, AppConfig.PrometheusConfig.Severity)
+	initMetrics(AppConfig.RedfishServers, AppConfig.PrometheusConfig.Severity)
 
 	// Wait for shutdown signal
 	<-sigChan
@@ -120,20 +120,26 @@ func main() {
 	log.Println("Shutdown complete")
 }
 
-func initializeMetrics(redfishServers []RedfishServer, severities []string) {
+func initMetrics(redfishServers []RedfishServer, severities []string) {
 	for _, server := range redfishServers {
-		// Trim URL prefixes and extract the host
-		host := strings.TrimPrefix(strings.TrimPrefix(server.IP, "http://"), "https://")
-
-		// Trim the port if available
-		splitHost, _, err := net.SplitHostPort(host)
-		if err == nil {
-			host = splitHost
-		}
+		host := extractHost(server.IP)
 
 		// Initialize counters for each severity label
+		// Additional label combinations should be defined here
 		for _, severity := range severities {
 			metrics.EventCountMetric.WithLabelValues(host, severity).Add(0)
 		}
 	}
+}
+
+// Helper function to extract the host from the URL
+func extractHost(url string) string {
+	// Remove http:// or https://
+	host := strings.TrimPrefix(strings.TrimPrefix(url, "http://"), "https://")
+
+	// Trim the port if available
+	if splitHost, _, err := net.SplitHostPort(host); err == nil {
+		host = splitHost
+	}
+	return host
 }
