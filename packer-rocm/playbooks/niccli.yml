@@ -1,0 +1,15 @@
+---
+# yamllint disable rule:line-length
+- name: "Prepare 'niccli' and driver"
+  hosts: default
+  environment:  # may be superfluous for your environment; mapped through Packer HCL with 'ansible_env_vars'
+    http_proxy: "{{ lookup('ansible.builtin.env', 'http_proxy') | default(omit) }}"
+    https_proxy: "{{ lookup('ansible.builtin.env', 'https_proxy') | default(omit) }}"
+    no_proxy: "{{ lookup('ansible.builtin.env', 'no_proxy') | default(omit) }}"
+  roles:
+    - name: Include 'niccli' Role
+      role: niccli
+      niccli_url: 'https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip'
+      niccli_sum: 'sha256:1dd2a7c6978c978febfc08ef2f416b2745573848d45700737d4b1405d8e1ac35'
+
+# vim: ft=yaml.ansible

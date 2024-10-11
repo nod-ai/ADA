@@ -1,5 +1,6 @@
 ---
 # vim: ft=yaml.ansible
+# yamllint disable rule:line-length
 - name: Build 'packer-rocm'
   hosts: localhost
   gather_facts: false
@@ -40,6 +41,10 @@
           -var rocm_releases=\"{{ (rocm_releases | default('6.2.2')) }}\"
           -var rocm_builder_disk={{ rocm_builder_disk | default('70G') }}
           -var rocm_installed={{ rocm_installed | default('false') }}
+          -var niccli_wanted={{ niccli_wanted | default('true') }}
+          -var niccli_driver={{ niccli_driver | default('true') }}
+          -var niccli_url={{ niccli_url | default('https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip') }}
+          -var niccli_sum={{ niccli_sum | default('sha256:1dd2a7c6978c978febfc08ef2f416b2745573848d45700737d4b1405d8e1ac35') }}
           -only=qemu.rocm .
         chdir: "{{ build_dir }}"
         creates: "{{ (build_dir, 'ubuntu-rocm.dd.gz') | path_join }}"  # avoid overwriting - require delete

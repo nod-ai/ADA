@@ -72,6 +72,16 @@ build {
   }
 
   provisioner "ansible" {
+    playbook_file = "${path.root}/../playbooks/tuned.yml"
+    user          = "ubuntu"
+    ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
+    extra_arguments = [
+      "-e", "ansible_python_interpreter=/usr/bin/python3",
+      "--scp-extra-args", "'-O'"
+    ]
+  }
+
+  provisioner "ansible" {
     playbook_file = "${path.root}/../playbooks/package-globber.yml"
     user          = "ubuntu"
     ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
@@ -79,6 +89,20 @@ build {
       "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
       "--scp-extra-args", "'-O'",
       "-e", "packages=/tmp/packer-pkgs"  # search path populated by 'file' provisioner above
+    ]
+  }
+
+  provisioner "ansible" {
+    playbook_file = "${path.root}/../playbooks/niccli.yml"
+    user          = "ubuntu"
+    ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
+    extra_arguments = [
+      "-e", "ansible_python_interpreter=/usr/bin/python3",
+      "--scp-extra-args", "'-O'",
+      "-e", "niccli_wanted=${var.niccli_wanted}",
+      "-e", "niccli_url=${var.niccli_url}",
+      "-e", "niccli_sum=${var.niccli_sum}",
+      "-e", "niccli_driver=${var.niccli_driver}"
     ]
   }
 
@@ -94,7 +118,14 @@ build {
 
   provisioner "shell" {
     execute_command   = "{{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
-    scripts           = ["${path.root}/scripts/cleanup.sh"]
+    inline_shebang = "/bin/bash"  # not giving '-e'; allow clean-up drift - don't fail if a task fails
+    inline = [
+      "export DEBIAN_FRONTEND=noninteractive",
+      "apt-get autoremove --purge -yq",
+      "apt-get clean -yq",
+      "cloud-init clean --logs --machine-id --configs all",
+      "rm -fv /etc/cloud/cloud.cfg.d/{*installer*,20-disable-cc-dpkg-grub}.cfg /etc/cloud/ds-identify.cfg",
+    ]
   }
 
   post-processor "compress" {
