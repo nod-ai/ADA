@@ -117,8 +117,14 @@ build {
   }
 
   provisioner "shell" {
-    execute_command   = "{{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
-    scripts           = ["${path.root}/scripts/cleanup.sh"]
+    inline_shebang = "/bin/bash"  # not giving '-e'; allow clean-up drift - don't fail if a task fails
+    inline = [
+      "export DEBIAN_FRONTEND=noninteractive",
+      "apt-get autoremove --purge -yq",
+      "apt-get clean -yq",
+      "cloud-init clean --logs --machine-id --configs all",
+      "rm -fv /etc/cloud/cloud.cfg.d/{*installer*,20-disable-cc-dpkg-grub}.cfg /etc/cloud/ds-identify.cfg",
+    ]
   }
 
   post-processor "compress" {
