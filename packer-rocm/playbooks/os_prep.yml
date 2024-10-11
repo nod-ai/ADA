@@ -1,0 +1,26 @@
+---
+# vim: ft=yaml.ansible
+- name: OS Preparation  # the Packer 'file' provisioner runs this before other plays
+  gather_facts: false
+  hosts: default
+  become: true
+  vars:  # change these with '-e var=...'
+    os_rdma_rename: true  # accepts loosely 'true' or 'false' values. ie: 0, 1, yes, no
+    os_rdma_rename_mode: 'NAME_KERNEL'
+  tasks:
+
+    - name: "Manage RDMA device rename mode ({{ os_rdma_rename_mode }})"
+      when: os_rdma_rename is truthy(convert_bool=True)
+      ansible.builtin.lineinfile:
+        # placing this in '/etc' precedes '/usr' or '/lib', overriding packages/enduring updates; see 'man 7 udev'
+        path: /etc/udev/rules.d/60-rdma-persistent-naming.rules
+        regexp: '^ACTION=="add", SUBSYSTEM=="infiniband",.* PROGRAM="rdma_rename'
+        line: >-
+          ACTION=="add",
+          SUBSYSTEM=="infiniband",
+          KERNEL!="hfi1*",
+          PROGRAM="rdma_rename %k {{ os_rdma_rename_mode }}"
+        create: true
+        owner: root
+        group: root
+        mode: '0644'
