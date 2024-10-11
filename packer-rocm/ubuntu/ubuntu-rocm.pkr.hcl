@@ -10,16 +10,16 @@ source "qemu" "rocm" {
   }
   cd_label        = "cidata"
   # system resources
-  cpus            = 8      # expedite compiling, adjust to machine allowance
-  disk_size       = "${var.rocm_builder_disk}"
-  memory          = 4096   # OOM w/ 2G during DKMS builds, 3G *may* suffice
+  cpus            = rocm_builder_cpus
+  disk_size       = "${var.rocm_builder_disk}"  # Packer seems to have trouble with strings that begin with numbers; explicitly cast
+  memory          = rocm_builder_memory
   # image/build prefs
   accelerator     = "kvm"  # or 'none' if KVM is unavailable
   boot_command    = ["<wait5>e<wait2>", "<down><down><down><end><wait>", "<bs><bs><bs><bs><wait>autoinstall ---<wait><f10>"]
   boot_wait       = "5s"
   efi_boot        = true
   efi_drop_efivars = true  # don't place efivars.fd in output artifact
-  format          = "raw"
+  format          = var.rocm_builder_disk_format
   headless        = var.headless
   http_directory  = var.http_directory
   shutdown_command       = "sudo -S shutdown -P now"
