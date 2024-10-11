@@ -16,7 +16,10 @@
         path: /etc/udev/rules.d/60-rdma-persistent-naming.rules
         regexp: '^ACTION=="add", SUBSYSTEM=="infiniband",.* PROGRAM="rdma_rename'
         line: >-
-          ACTION=="add", SUBSYSTEM=="infiniband", KERNEL!="hfi1*", PROGRAM="rdma_rename %k {{ os_rdma_rename_mode }}"
+          ACTION=="add",
+          SUBSYSTEM=="infiniband",
+          KERNEL!="hfi1*",
+          PROGRAM="rdma_rename %k {{ os_rdma_rename_mode }}"
         create: true
         owner: root
         group: root
