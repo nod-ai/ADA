@@ -117,6 +117,7 @@ build {
   }
 
   provisioner "shell" {
+    execute_command   = "{{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
     inline_shebang = "/bin/bash"  # not giving '-e'; allow clean-up drift - don't fail if a task fails
     inline = [
       "export DEBIAN_FRONTEND=noninteractive",
