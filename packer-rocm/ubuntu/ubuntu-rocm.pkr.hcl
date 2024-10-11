@@ -59,11 +59,21 @@ build {
   }
 
   provisioner "ansible" {
-    playbook_file = "${path.root}/../playbooks/rocm.yml"
+    playbook_file = "${path.root}/../playbooks/os_prep.yml"
     user          = "ubuntu"
     ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
     extra_arguments = [
       "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
+      "--scp-extra-args", "'-O'"
+    ]
+  }
+
+  provisioner "ansible" {
+    playbook_file = "${path.root}/../playbooks/rocm.yml"
+    user          = "ubuntu"
+    ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
+    extra_arguments = [
+      "-e", "ansible_python_interpreter=/usr/bin/python3",
       "--scp-extra-args", "'-O'",
       "-e", "rocm_releases=${var.rocm_releases}",  # pass ROCm requests [release + packages]
       "-e", "rocm_extras=${var.rocm_extras}",
