@@ -19,7 +19,7 @@ source "qemu" "rocm" {
   boot_wait       = "5s"
   efi_boot        = true
   efi_drop_efivars = true  # don't place efivars.fd in output artifact
-  format          = var.rocm_builder_disk_format
+  format          = "raw"  # QCOW may not be converted
   headless        = var.headless
   http_directory  = var.http_directory
   shutdown_command       = "sudo -S shutdown -P now"

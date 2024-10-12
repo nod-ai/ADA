@@ -39,12 +39,6 @@ variable "rocm_builder_disk" {
   description = "amdgpu and ROCm releases demand considerable space. Layout in 'user-data-rocm' will claim all of this"
 }
 
-variable "rocm_builder_disk_format" {
-  type = string
-  default = "raw"
-  description = "Virtual Machine disk format: ['raw', 'qcow2']"
-}
-
 variable "niccli_wanted" {
   type = string
   default = "true"
