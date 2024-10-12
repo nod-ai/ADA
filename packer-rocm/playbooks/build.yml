@@ -40,6 +40,9 @@
           -var rocm_extras={{ rocm_extras | default('mesa-amdgpu-va-drivers') }}
           -var rocm_releases=\"{{ (rocm_releases | default('6.2.2')) }}\"
           -var rocm_builder_disk={{ rocm_builder_disk | default('70G') }}
+          -var rocm_builder_disk_format={{ rocm_builder_disk_format | default('raw') }}
+          -var rocm_builder_cpus={{ rocm_builder_cpus | default(4) }}
+          -var rocm_builder_memory={{ rocm_builder_memory | default(4096) }}
           -var rocm_installed={{ rocm_installed | default('false') }}
           -var niccli_wanted={{ niccli_wanted | default('true') }}
           -var niccli_driver={{ niccli_driver | default('true') }}
