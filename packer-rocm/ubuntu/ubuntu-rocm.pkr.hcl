@@ -10,16 +10,16 @@ source "qemu" "rocm" {
   }
   cd_label        = "cidata"
   # system resources
-  cpus            = 8      # expedite compiling, adjust to machine allowance
-  disk_size       = "${var.rocm_builder_disk}"
-  memory          = 4096   # OOM w/ 2G during DKMS builds, 3G *may* suffice
+  cpus            = var.rocm_builder_cpus
+  disk_size       = "${var.rocm_builder_disk}"  # Packer seems to have trouble with strings that begin with numbers; explicitly cast
+  memory          = var.rocm_builder_memory
   # image/build prefs
   accelerator     = "kvm"  # or 'none' if KVM is unavailable
   boot_command    = ["<wait5>e<wait2>", "<down><down><down><end><wait>", "<bs><bs><bs><bs><wait>autoinstall ---<wait><f10>"]
   boot_wait       = "5s"
   efi_boot        = true
   efi_drop_efivars = true  # don't place efivars.fd in output artifact
-  format          = "raw"
+  format          = "raw"  # qcow2 may not be converted. if written to drives, can't be read back/won't find 'curtin'
   headless        = var.headless
   http_directory  = var.http_directory
   shutdown_command       = "sudo -S shutdown -P now"
@@ -36,6 +36,16 @@ source "qemu" "rocm" {
 build {
   sources = ["source.qemu.rocm"]
 
+  # 'tgz' of custom packages not copied or managed with Makefile. instead: copied by 'file' Packer provisioner, processed by Ansible
+  provisioner "file" {
+    destination = "/tmp/"
+    sources     = [
+      "${path.root}/scripts/curtin-hooks",
+      "${path.root}/scripts/setup-bootloader",
+      "${path.root}/scripts/install-custom-packages"
+    ]  # last script only copied to allow 'curtin.sh'/hooks to be satisfied
+  }
+
   # docs suggest destination be made first with 'shell' when copying directories to avoid non-determinism
   provisioner "shell" {
     inline = ["mkdir /tmp/packer-pkgs"]
@@ -44,11 +54,6 @@ build {
   provisioner "file" {
     destination = "/tmp/packer-pkgs"
     source = "${path.root}/../packages/"
-  }
-
-  provisioner "file" {
-    destination = "/tmp/curtin-hooks"
-    source      = "${path.root}/scripts/curtin-hooks"
   }
 
   provisioner "shell" {

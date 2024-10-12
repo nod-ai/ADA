@@ -21,6 +21,18 @@ variable "rocm_extras" {
   description = "Comma-separated string of extra packages to install [after 'amdgpu-dkms' and ROCm releases]"
 }
 
+variable "rocm_builder_cpus" {
+  type = number
+  default = 4
+  description = "Number of CPU threads given to the builder Virtual Machine. More may help compilation speed"
+}
+
+variable "rocm_builder_memory" {
+  type = number
+  default = 4096
+  description = "RAM given to the builder VM, measured in MB. Out-of-memory conditions were found with 2G during DKMS builds"
+}
+
 variable "rocm_builder_disk" {
   type = string
   default = "70G"
