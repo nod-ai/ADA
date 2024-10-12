@@ -1,0 +1,3 @@
+[submodule "amdchecknode"]
+	path = amdchecknode
+	url = https://github.com/joelandman-amd/amdchecknode.git
