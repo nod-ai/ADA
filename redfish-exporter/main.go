@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,6 +29,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/nod-ai/ADA/redfish-exporter/metrics"
 	"github.com/nod-ai/ADA/redfish-exporter/slurm"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -94,6 +96,9 @@ func main() {
 		}
 	}()
 
+	// Initialize Prometheus metrics with default values
+	initMetrics(AppConfig.RedfishServers, AppConfig.PrometheusConfig.Severity)
+
 	// Wait for shutdown signal
 	<-sigChan
 	log.Println("Received shutdown signal. Closing listener...")
@@ -113,4 +118,28 @@ func main() {
 
 	// Perform any additional shutdown steps here
 	log.Println("Shutdown complete")
+}
+
+func initMetrics(redfishServers []RedfishServer, severities []string) {
+	for _, server := range redfishServers {
+		host := extractHost(server.IP)
+
+		// Initialize counters for each severity label
+		// Additional label combinations should be defined here
+		for _, severity := range severities {
+			metrics.EventCountMetric.WithLabelValues(host, severity).Add(0)
+		}
+	}
+}
+
+// Helper function to extract the host from the URL
+func extractHost(url string) string {
+	// Remove http:// or https://
+	host := strings.TrimPrefix(strings.TrimPrefix(url, "http://"), "https://")
+
+	// Trim the port if available
+	if splitHost, _, err := net.SplitHostPort(host); err == nil {
+		host = splitHost
+	}
+	return host
 }
