@@ -36,6 +36,15 @@ source "qemu" "rocm" {
 build {
   sources = ["source.qemu.rocm"]
 
+  # 'tgz' of custom packages not copied or managed with Makefile. instead: copied by 'file' Packer provisioner, processed by Ansible
+  provisioner "file" {
+    destination = "/tmp/"
+    sources     = [
+      "${path.root}/scripts/curtin-hooks",
+      "${path.root}/scripts/setup-bootloader",
+      "${path.root}/scripts/install-custom-package"  # last script only copied to allow 'curtin.sh'/hooks to be satisfied.
+  }
+
   # docs suggest destination be made first with 'shell' when copying directories to avoid non-determinism
   provisioner "shell" {
     inline = ["mkdir /tmp/packer-pkgs"]
@@ -44,11 +53,6 @@ build {
   provisioner "file" {
     destination = "/tmp/packer-pkgs"
     source = "${path.root}/../packages/"
-  }
-
-  provisioner "file" {
-    destination = "/tmp/curtin-hooks"
-    source      = "${path.root}/scripts/curtin-hooks"
   }
 
   provisioner "shell" {
