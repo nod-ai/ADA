@@ -56,8 +56,9 @@ autoinstall:
     swap:
       size: 0
     layout:
-      name: lvm
-      # if 'sizing-policy' is 'scaled', 'disk_size' in 'ubuntu-rocm.pkr.hcl' must account for only 50% availability. compilation demands considerable space
+      # 'cloud-init'/cc_growpart don't handle common LVM well, so direct partitions
+      # cc_growpart.py[DEBUG]: '/' SKIPPED: Resizing mapped device (/dev/mapper/ubuntu--vg-ubuntu--lv) skipped as it is not encrypted.
+      name: direct
       sizing-policy: all
       # reset-partition: true  # likely impractical with ROCm/amdgpu/etc, multiplies usage
   late-commands:
