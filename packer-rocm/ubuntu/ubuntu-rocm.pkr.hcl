@@ -10,9 +10,9 @@ source "qemu" "rocm" {
   }
   cd_label        = "cidata"
   # system resources
-  cpus            = rocm_builder_cpus
+  cpus            = var.rocm_builder_cpus
   disk_size       = "${var.rocm_builder_disk}"  # Packer seems to have trouble with strings that begin with numbers; explicitly cast
-  memory          = rocm_builder_memory
+  memory          = var.rocm_builder_memory
   # image/build prefs
   accelerator     = "kvm"  # or 'none' if KVM is unavailable
   boot_command    = ["<wait5>e<wait2>", "<down><down><down><end><wait>", "<bs><bs><bs><bs><wait>autoinstall ---<wait><f10>"]
