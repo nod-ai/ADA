@@ -3,6 +3,9 @@ kind: ConfigMap
 metadata:
   name: redfish-exporter-configmap
 data:
+# The Kubernetes DNS resolves the service name to an IP address
+# Which prevents the initial Prometheus counter from being initialized with correct label
+# See: https://github.com/nod-ai/ADA/pull/33
   redfish-servers: '[{"ip": "http://redfish-mock.silo.svc.cluster.local:8000", "username": "Username1", "password": "Password1", "loginType": "Session", "slurmNode": "Node1"}]'
   subscription-payload: |
     {
