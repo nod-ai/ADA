@@ -42,7 +42,8 @@ build {
     sources     = [
       "${path.root}/scripts/curtin-hooks",
       "${path.root}/scripts/setup-bootloader",
-      "${path.root}/scripts/install-custom-package"  # last script only copied to allow 'curtin.sh'/hooks to be satisfied.
+      "${path.root}/scripts/install-custom-package"
+    ]  # last script only copied to allow 'curtin.sh'/hooks to be satisfied
   }
 
   # docs suggest destination be made first with 'shell' when copying directories to avoid non-determinism
