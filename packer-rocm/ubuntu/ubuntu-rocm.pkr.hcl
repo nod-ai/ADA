@@ -42,7 +42,7 @@ build {
     sources     = [
       "${path.root}/scripts/curtin-hooks",
       "${path.root}/scripts/setup-bootloader",
-      "${path.root}/scripts/install-custom-package"
+      "${path.root}/scripts/install-custom-packages"
     ]  # last script only copied to allow 'curtin.sh'/hooks to be satisfied
   }
 
