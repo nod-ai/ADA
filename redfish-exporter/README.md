@@ -68,6 +68,7 @@ The AMD Redfish Exporter is configured using environment variables or a configur
 - `USE_SSL`: Enable SSL/TLS (default: "false")
 - `CERTFILE`: Path to SSL certificate file (required if USE_SSL is true)
 - `KEYFILE`: Path to SSL key file (required if USE_SSL is true)
+- `SLURM_USER`: SLURM user name
 - `SLURM_TOKEN`: SLURM authentication token
 - `SLURM_CONTROL_NODE`: SLURM control node address
 - `REDFISH_SERVERS`: JSON array of Redfish server configurations

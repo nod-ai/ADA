@@ -59,7 +59,7 @@ func main() {
 		if len(strings.TrimSpace(AppConfig.SlurmControlNode)) == 0 {
 			log.Fatalf("Provide slurm control node IP:Port to enable slurm")
 		}
-		_, err := slurm.NewClient(AppConfig.SlurmControlNode, AppConfig.SlurmToken)
+		_, err := slurm.NewClient(AppConfig.SlurmControlNode, AppConfig.SlurmUser, AppConfig.SlurmToken)
 		if err != nil {
 			log.Fatalf("failed to create slurm client, err: %+v", err)
 		}

@@ -12,6 +12,7 @@ The AMD Redfish Exporter can be configured using the following environment varia
 - `CERTFILE`: Path to SSL certificate file
 - `KEYFILE`: Path to SSL key file
 - `METRICS_PORT`: Port to expose Prometheus metrics (default: "2112")
+- `SLURM_USER`: SLURM user name
 - `SLURM_TOKEN`: SLURM authentication token
 - `SLURM_CONTROL_NODE`: SLURM control node address
 - `SUBSCRIPTION_PAYLOAD`: JSON string containing Redfish subscription details
