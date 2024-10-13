@@ -54,11 +54,14 @@ type Client struct {
 
 var apiCl *Client // singleton client
 
-func NewClient(slurmControlNode, slurmToken string) (*Client, error) {
+func NewClient(slurmControlNode, slurmUser, slurmToken string) (*Client, error) {
 	slConfig := &SlurmServerConfig{
 		URL:         slurmControlNode,
 		Username:    defaultSlurmUsername,
 		BearerToken: slurmToken,
+	}
+	if slurmUser != "" {
+		slConfig.Username = slurmUser
 	}
 	cl := createRestClient(slConfig)
 	c := &Client{apiClient: cl}
