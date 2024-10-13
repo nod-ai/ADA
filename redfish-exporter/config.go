@@ -51,6 +51,7 @@ type Config struct {
 	}
 	SlurmToken          string
 	SlurmControlNode    string
+	SlurmUser           string
 	SubscriptionPayload SubscriptionPayload
 	RedfishServers      []RedfishServer
 	TriggerEvents       []TriggerEvent
@@ -117,6 +118,7 @@ func setupConfig() Config {
 
 	AppConfig.SlurmToken = os.Getenv("SLURM_TOKEN")
 	AppConfig.SlurmControlNode = os.Getenv("SLURM_CONTROL_NODE")
+	AppConfig.SlurmUser = os.Getenv("SLURM_USER")
 
 	subscriptionPayloadJSON := os.Getenv("SUBSCRIPTION_PAYLOAD")
 	if err := json.Unmarshal([]byte(subscriptionPayloadJSON), &AppConfig.SubscriptionPayload); err != nil {
