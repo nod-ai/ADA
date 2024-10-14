@@ -12,7 +12,8 @@ project.
 
 * [packer](https://developer.hashicorp.com/packer/docs/install)
 * `ansible`: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
-* `qemu`, `qemu-nbd`, `nbd-fuse`, `fuse`
+* `qemu`, `qemu-nbd`, `nbd-fuse`, `fuse`, `nbdkit`
+* `nbdkit-{nbd-plugin,plugin-nbd}` _(Fedora/Debian, respectively)_
 * `xorriso` or `genisoimage`
 * `rsync`
 * `git`
