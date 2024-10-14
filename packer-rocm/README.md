@@ -69,9 +69,6 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
 
 ### I/O
 
-The artifact is named `ubuntu-rocm.tar.gz`. When building with `ansible-pull`, it may be here:  
-`~/.ansible/pull/$HOSTNAME/packer-rocm/packer-maas/ubuntu`
-
 | Variable | Description | Default |
 |:----------:|-------------|:---------:|
 | `rocm_releases` | One or more versions to include _[as a comma-separated string]_.<br/>Newest selects the `amdgpu` driver. | _6.2.2_ |
@@ -97,6 +94,9 @@ maas admin boot-resources create \
      filetype='tgz' \
      content@=ubuntu-rocm.tar.gz
 ```
+
+The artifact is named `ubuntu-rocm.tar.gz`. When building with `ansible-pull`, it may be here:  
+`~/.ansible/pull/$HOSTNAME/packer-rocm/packer-maas/ubuntu`
 
 #### Proxy
 
