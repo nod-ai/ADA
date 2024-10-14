@@ -143,7 +143,16 @@ build {
     ]
   }
 
-  post-processor "compress" {
-    output = "ubuntu-rocm.dd.gz"
+  post-processor "shell-local" {
+    inline = [
+      "SOURCE=${source.name}",
+      "OUTPUT=${var.rocm_filename}",
+      "IMG_FMT=raw",
+      "ROOT_PARTITION=3",
+      "source ../scripts/fuse-nbd",
+      "source ../scripts/fuse-tar-root",
+      "rm -rf output-${source.name}"
+    ]
+    inline_shebang = "/bin/bash -e"
   }
 }

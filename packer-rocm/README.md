@@ -12,7 +12,8 @@ project.
 
 * [packer](https://developer.hashicorp.com/packer/docs/install)
 * `ansible`: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
-* `qemu`
+* `qemu`, `qemu-nbd`, `nbd-fuse`, `fuse`, `nbdkit`
+* `nbdkit-{nbd-plugin,plugin-nbd}` _(Fedora/Debian, respectively)_
 * `xorriso` or `genisoimage`
 * `rsync`
 * `git`
@@ -68,9 +69,6 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
 
 ### I/O
 
-The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it may be here:  
-`~/.ansible/pull/$HOSTNAME/packer-rocm/packer-maas/ubuntu`
-
 | Variable | Description | Default |
 |:----------:|-------------|:---------:|
 | `rocm_releases` | One or more versions to include _[as a comma-separated string]_.<br/>Newest selects the `amdgpu` driver. | _6.2.2_ |
@@ -83,6 +81,22 @@ The artifact is named `ubuntu-rocm.dd.gz`. When building with `ansible-pull`, it
 | `niccli_driver` | If the `bnxt_{en,re}` NIC drivers are included. | `True` |
 | `headless` | If the VNC window for the VM is _hidden_ during build. | `True` |
 | `kernel` | _MaaS_ images do not _typically_ include a kernel. Set this to include one. | _Ansible:_ `linux-generic`<br />_Manual:_ None |
+
+#### MaaS
+
+This image is built _(and uploaded)_ in `tgz` format to respect customized disk layouts:
+
+```shell
+maas admin boot-resources create \
+     name='custom/packer-rocm-ubuntu-22.04.5' \
+     title='packer-rocm (Ubuntu 22.04.5)' \
+     architecture='amd64/generic' \
+     filetype='tgz' \
+     content@=ubuntu-rocm.tar.gz
+```
+
+The artifact is named `ubuntu-rocm.tar.gz`. When building with `ansible-pull`, it may be here:  
+`~/.ansible/pull/$HOSTNAME/packer-rocm/packer-maas/ubuntu`
 
 #### Proxy
 
