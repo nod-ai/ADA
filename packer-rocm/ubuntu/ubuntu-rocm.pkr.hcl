@@ -140,7 +140,7 @@ build {
 
   post-processor "shell-local" {
     inline = [
-      "SOURCE=flat",
+      "SOURCE=rocm",  # reflects the name assigned to the build source
       "IMG_FMT=raw",
       "ROOT_PARTITION=2",
       "OUTPUT=ubuntu-rocm.tar.gz",
