@@ -3,6 +3,12 @@ variable "ubuntu_release" {
   default = "22.04.5"
 }
 
+variable "rocm_filename" {
+  type        = string
+  default     = "ubuntu-rocm.tar.gz"
+  description = "The name of the output file/artifact (tarball)"
+}
+
 variable "rocm_releases" {
   type = string
   default = "6.2.2"

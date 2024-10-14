@@ -140,12 +140,13 @@ build {
 
   post-processor "shell-local" {
     inline = [
-      "SOURCE=rocm",  # reflects the name assigned to the build source
+      "SOURCE=${source.name}",
+      "OUTPUT=${var.rocm_filename}",
       "IMG_FMT=raw",
       "ROOT_PARTITION=2",
-      "OUTPUT=ubuntu-rocm.tar.gz",
       "source ../scripts/fuse-nbd",
-      "source ../scripts/fuse-tar-root"
+      "source ../scripts/fuse-tar-root",
+      "rm -rf output-${source.name}"
     ]
     inline_shebang = "/bin/bash -e"
   }
