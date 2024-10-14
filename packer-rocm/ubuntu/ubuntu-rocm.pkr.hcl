@@ -140,6 +140,8 @@ build {
       "apt-get clean -yq",
       "cloud-init clean --logs --machine-id --configs all",
       "rm -fv /etc/cloud/cloud.cfg.d/{*installer*,20-disable-cc-dpkg-grub}.cfg /etc/cloud/ds-identify.cfg",
+      "find /tmp/niccli -xdev -delete || true",
+      "find /tmp/libbnxt_re -xdev -delete || true",
     ]
   }
 
