@@ -149,6 +149,14 @@ build {
       "OUTPUT=${var.rocm_filename}",
       "IMG_FMT=raw",
       "ROOT_PARTITION=2",
+      # expedite compression: use an exported function to test for 'pigz' and remap 'gzip' to it, if found
+      "if command -v pigz > /dev/null 2>&1; then",
+      "  echo 'Mapping gzip to pigz for parallel compression'",
+      "  gzip() { pigz \"$@\"; }",
+      "  export -f gzip",
+      "else",
+      "  echo '*Not* mapping gzip to pigz for parallel compression'",
+      "fi",
       "source ../scripts/fuse-nbd",
       "source ../scripts/fuse-tar-root",
       "rm -rf output-${source.name}"
