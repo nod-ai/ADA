@@ -139,9 +139,10 @@ build {
       "apt-get autoremove --purge -yq",
       "apt-get clean -yq",
       "cloud-init clean --logs --machine-id --configs all",
-      "rm -fv /etc/cloud/cloud.cfg.d/{*installer*,20-disable-cc-dpkg-grub}.cfg /etc/cloud/ds-identify.cfg",
-      "find /tmp/niccli -xdev -delete || true",
-      "find /tmp/libbnxt_re -xdev -delete || true",
+      "rm -fv /etc/ssh/ssh_host_* /etc/cloud/cloud.cfg.d/{*installer*,20-disable-cc-dpkg-grub}.cfg /etc/cloud/ds-identify.cfg /var/log/{alternatives,bootstrap}.log",
+      "find /tmp/niccli -xdev -delete",
+      "find /tmp/libbnxt_re -xdev -delete",
+      "find /var/log/installer -xdev -delete",
     ]
   }
 
