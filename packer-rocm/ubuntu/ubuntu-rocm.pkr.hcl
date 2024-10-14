@@ -143,7 +143,7 @@ build {
       "SOURCE=${source.name}",
       "OUTPUT=${var.rocm_filename}",
       "IMG_FMT=raw",
-      "ROOT_PARTITION=2",
+      "ROOT_PARTITION=3",
       "source ../scripts/fuse-nbd",
       "source ../scripts/fuse-tar-root",
       "rm -rf output-${source.name}"
