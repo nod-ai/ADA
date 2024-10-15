@@ -1,6 +1,6 @@
 # AMD Redfish Exporter
 
-The AMD Redfish Exporter is a Go server that subscribes to events and telemetry from servers with Redfish service enabled. It exposes this data on a Prometheus-compatible metrics route for scraping. The exporter also integrates with SLURM to drain nodes when critical hardware events are detected.
+The AMD Redfish Exporter is a Go server that subscribes to events and telemetry from servers with Redfish service enabled. It exposes this data on a Prometheus-compatible metrics route for scraping. The exporter also integrates with SLURM to drain nodes when critical hardware events are detected. This exporter is tested on Slurm version `23.02.7` with REST API version `v0.0.39`
 
 ## Features
 
@@ -68,7 +68,7 @@ The AMD Redfish Exporter is configured using environment variables or a configur
 - `USE_SSL`: Enable SSL/TLS (default: "false")
 - `CERTFILE`: Path to SSL certificate file (required if USE_SSL is true)
 - `KEYFILE`: Path to SSL key file (required if USE_SSL is true)
-- `SLURM_USER`: SLURM user name
+- `SLURM_USER`: SLURM user name. Please note that only the `root` user has permission to perform node operations, such as draining.
 - `SLURM_TOKEN`: SLURM authentication token
 - `SLURM_CONTROL_NODE`: SLURM control node address
 - `REDFISH_SERVERS`: JSON array of Redfish server configurations
@@ -93,6 +93,8 @@ For a complete list of configuration options, refer to the [Configuration Guide]
 Note that SSL can be enabled using the provided dev certificate and key and `--ssl` flag. For more detailed usage instructions, see the [User Guide](docs/user-guide.md).
 
 ### Slurm Integration
+
+The exporter is designed to utilize Slurm APIs from version `0.0.39`. Please follow these instructions only if you wish to use APIs from a different version. Keep in mind that the code generator may not function properly with older versions. If you prefer to stick with the `0.0.39` APIs, you can skip steps 1 and 2.
 
 1. Follow [this](./api/README.md) guide for generating the Slurm REST API.
 
