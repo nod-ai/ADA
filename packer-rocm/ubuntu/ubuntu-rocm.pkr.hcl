@@ -36,31 +36,29 @@ source "qemu" "rocm" {
 build {
   sources = ["source.qemu.rocm"]
 
+  # generate/copy tarball of custom packages
   provisioner "shell-local" {
     inline = [
       "tar cvzf ${path.root}/custom-packages.tar.gz -C ${path.root}/packages --overwrite .",
     ]
     inline_shebang = "/bin/bash -e"
   }
+  provisioner "file" {
+    destination = "/tmp/"
+    generated   = true
+    sources     = [
+      "${path.root}/custom-packages.tar.gz"
+    ]
+  }
 
+  # copy supporting 'packer-maas' assets
   provisioner "file" {
     destination = "/tmp/"
     sources     = [
       "${path.root}/scripts/curtin-hooks",
       "${path.root}/scripts/setup-bootloader",
-      "${path.root}/scripts/install-custom-packages",
-      "${path.root}/custom-packages.tar.gz"
+      "${path.root}/scripts/install-custom-packages"
     ]
-  }
-
-  # docs suggest destination be made first with 'shell' when copying directories to avoid non-determinism
-  provisioner "shell" {
-    inline = ["mkdir /tmp/packer-pkgs"]
-  }
-
-  provisioner "file" {
-    destination = "/tmp/packer-pkgs"
-    source = "${path.root}/../packages/"
   }
 
   provisioner "shell" {
@@ -156,9 +154,10 @@ build {
       "else",
       "  echo '*Not* mapping gzip to pigz for parallel compression'",
       "fi",
+      # mount the image, prepare the tarball, compress, and finally clean up temporary i/o
       "source ../scripts/fuse-nbd",
       "source ../scripts/fuse-tar-root",
-      "rm -rf output-${source.name}"
+      "rm -rf output-${source.name} ${path.root}/custom-packages.tar.gz"
     ]
     inline_shebang = "/bin/bash -e"
   }
