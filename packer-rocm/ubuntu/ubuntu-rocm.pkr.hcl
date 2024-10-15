@@ -36,7 +36,7 @@ source "qemu" "rocm" {
 build {
   sources = ["source.qemu.rocm"]
 
-  # generate/copy tarball of custom packages
+  # generate/copy tarball of custom packages; 'packer-maas' will process
   provisioner "shell-local" {
     inline = [
       "tar cvzf ${path.root}/custom-packages.tar.gz -C ${path.root}/packages --overwrite .",
