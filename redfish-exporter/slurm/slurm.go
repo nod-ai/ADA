@@ -83,10 +83,10 @@ func GetClient() *Client {
 func (c *Client) ResumeNode(nodeName string) error {
 	apiCall := func() (interface{}, *http.Response, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-		jreq := c.apiClient.SlurmAPI.SlurmV0040PostNode(ctx, nodeName)
-		req := slurmrestdapi.V0040UpdateNodeMsg{State: []string{"resume"}}
-		jreq = jreq.V0040UpdateNodeMsg(req)
-		res, resp, err := c.apiClient.SlurmAPI.SlurmV0040PostNodeExecute(jreq)
+		jreq := c.apiClient.SlurmAPI.SlurmV0039UpdateNode(ctx, nodeName)
+		req := slurmrestdapi.V0039UpdateNodeMsg{State: []string{"resume"}}
+		jreq = jreq.V0039UpdateNodeMsg(req)
+		res, resp, err := c.apiClient.SlurmAPI.SlurmV0039UpdateNodeExecute(jreq)
 		cancel()
 		if err != nil {
 			return res, resp, err
@@ -108,10 +108,11 @@ func (c *Client) ResumeNode(nodeName string) error {
 func (c *Client) DrainNode(nodeName string) error {
 	apiCall := func() (interface{}, *http.Response, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-		jreq := c.apiClient.SlurmAPI.SlurmV0040PostNode(ctx, nodeName)
-		req := slurmrestdapi.V0040UpdateNodeMsg{State: []string{"drain"}}
-		jreq = jreq.V0040UpdateNodeMsg(req)
-		res, resp, err := c.apiClient.SlurmAPI.SlurmV0040PostNodeExecute(jreq)
+		//slurm_v0039_update_node
+		jreq := c.apiClient.SlurmAPI.SlurmV0039UpdateNode(ctx, nodeName)
+		req := slurmrestdapi.V0039UpdateNodeMsg{State: []string{"drain"}}
+		jreq = jreq.V0039UpdateNodeMsg(req)
+		res, resp, err := c.apiClient.SlurmAPI.SlurmV0039UpdateNodeExecute(jreq)
 		cancel()
 		if err != nil {
 			return res, resp, err
