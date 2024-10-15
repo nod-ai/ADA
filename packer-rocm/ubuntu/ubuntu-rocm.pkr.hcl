@@ -139,7 +139,10 @@ build {
       "apt-get autoremove --purge -yq",
       "apt-get clean -yq",
       "cloud-init clean --logs --machine-id --configs all",
-      "rm -fv /etc/cloud/cloud.cfg.d/{*installer*,20-disable-cc-dpkg-grub}.cfg /etc/cloud/ds-identify.cfg",
+      "rm -fv /etc/ssh/ssh_host_* /etc/cloud/cloud.cfg.d/{*installer*,20-disable-cc-dpkg-grub}.cfg /etc/cloud/ds-identify.cfg /var/log/{alternatives,bootstrap}.log",
+      "find /tmp/niccli -xdev -delete",
+      "find /tmp/libbnxt_re -xdev -delete",
+      "find /var/log/installer -xdev -delete",
     ]
   }
 
@@ -148,7 +151,15 @@ build {
       "SOURCE=${source.name}",
       "OUTPUT=${var.rocm_filename}",
       "IMG_FMT=raw",
-      "ROOT_PARTITION=3",
+      "ROOT_PARTITION=2",
+      # expedite compression: use an exported function to test for 'pigz' and remap 'gzip' to it, if found
+      "if command -v pigz > /dev/null 2>&1; then",
+      "  echo 'Mapping gzip to pigz for parallel compression'",
+      "  gzip() { pigz \"$@\"; }",
+      "  export -f gzip",
+      "else",
+      "  echo '*Not* mapping gzip to pigz for parallel compression'",
+      "fi",
       "source ../scripts/fuse-nbd",
       "source ../scripts/fuse-tar-root",
       "rm -rf output-${source.name}"
