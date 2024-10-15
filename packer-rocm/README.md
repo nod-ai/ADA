@@ -36,7 +36,7 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
     git clone https://github.com/nod-ai/ADA.git
     ```
 
-    Place any `.deb` or `.rpm` packages to include with the image(s) in `ADA/packer-rocm/packages/`
+    Place any `.deb` packages to include with the image in `ADA/packer-rocm/ubuntu/packages/`
 
 2. Copy assets from _ADA_ `packer-rocm` to the _Canonical_ `packer-maas` source:
 

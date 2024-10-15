@@ -36,14 +36,21 @@ source "qemu" "rocm" {
 build {
   sources = ["source.qemu.rocm"]
 
-  # 'tgz' of custom packages not copied or managed with Makefile. instead: copied by 'file' Packer provisioner, processed by Ansible
+  provisioner "shell-local" {
+    inline = [
+      "tar cvzf ${path.root}/custom-packages.tar.gz -C ${path.root}/packages --overwrite .",
+    ]
+    inline_shebang = "/bin/bash -e"
+  }
+
   provisioner "file" {
     destination = "/tmp/"
     sources     = [
       "${path.root}/scripts/curtin-hooks",
       "${path.root}/scripts/setup-bootloader",
-      "${path.root}/scripts/install-custom-packages"
-    ]  # last script only copied to allow 'curtin.sh'/hooks to be satisfied
+      "${path.root}/scripts/install-custom-packages",
+      "${path.root}/custom-packages.tar.gz"
+    ]
   }
 
   # docs suggest destination be made first with 'shell' when copying directories to avoid non-determinism
@@ -93,17 +100,6 @@ build {
     extra_arguments = [
       "-e", "ansible_python_interpreter=/usr/bin/python3",
       "--scp-extra-args", "'-O'"
-    ]
-  }
-
-  provisioner "ansible" {
-    playbook_file = "${path.root}/../playbooks/package-globber.yml"
-    user          = "ubuntu"
-    ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
-    extra_arguments = [
-      "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
-      "--scp-extra-args", "'-O'",
-      "-e", "packages=/tmp/packer-pkgs"  # search path populated by 'file' provisioner above
     ]
   }
 
