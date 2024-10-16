@@ -72,7 +72,8 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
 | Variable | Description | Default |
 |:----------:|-------------|:---------:|
 | `rocm_releases` | One or more versions to include _[as a comma-separated string]_.<br/>Newest selects the `amdgpu` driver. | _6.2.2_ |
-| `rocm_extras` | Packages to install _after_ `amdgpu-dkms` and _ROCm_. Also comma-separated. | _mesa-amdgpu-va-drivers_ |
+| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_. | _mesa-amdgpu-va-drivers,linux-headers-generic-hwe-22.04=5.15.*_ |
+| `rocm_kernel` | The kernel package with an optional release specifier.<br/>Headers/others may be defined in `rocm_extras` | `linux-image-generic-hwe-22.04=5.15.*` |
 | `rocm_installed` | If _ROCm_ packages are installed. The `amdgpu` _driver/extras_ are, always. | `False` |
 | `rocm_builder_disk` | Space given to the builder VM; releases compound quickly. | _70G_ |
 | `niccli_wanted` | If [niccli](https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/Configuration-adapter/nic-cli-configuration-utility.html) is included in the image. | `True` |
@@ -80,7 +81,6 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
 | `niccli_sum` | Optional, string. Checksum to use for validating `niccli_url`.<br/>Example: `sha256:abcd1234` | _Undefined_ |
 | `niccli_driver` | If the `bnxt_{en,re}` NIC drivers are included. | `True` |
 | `headless` | If the VNC window for the VM is _hidden_ during build. | `True` |
-| `kernel` | _MaaS_ images do not _typically_ include a kernel. Set this to include one. | _Ansible:_ `linux-image-generic-hwe-22.04=5.15.*`<br />_Manual:_ None, deferred to MaaS |
 
 #### MaaS
 
