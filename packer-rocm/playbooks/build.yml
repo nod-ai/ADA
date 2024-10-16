@@ -35,7 +35,7 @@
       ansible.builtin.command:  # TODO: improve command preparation, rely on Packer defaults [and avoid typing problems] when Ansible extra-vars are unspecified
         cmd: >
           packer build
-          -var kernel={{ kernel | default('linux-hwe') }}
+          -var kernel={{ kernel | default('linux-generic-hwe-22.04') }}
           -var headless={{ headless | default('true') }}
           -var rocm_extras={{ rocm_extras | default('mesa-amdgpu-va-drivers') }}
           -var rocm_releases=\"{{ (rocm_releases | default('6.2.2')) }}\"
