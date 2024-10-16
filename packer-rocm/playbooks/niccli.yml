@@ -9,7 +9,7 @@
   roles:
     - name: Include 'niccli' Role
       role: niccli
-      niccli_url: 'https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip'
-      niccli_sum: 'sha256:1dd2a7c6978c978febfc08ef2f416b2745573848d45700737d4b1405d8e1ac35'
+      niccli_url: 'https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA2/bcm5760x_231.2.63.0a.zip'
+      niccli_sum: 'sha256:5c46de9addf9284fb48fef1c505c470c85fd4c129045bdd8ee706447bc1bd025'
 
 # vim: ft=yaml.ansible

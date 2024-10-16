@@ -60,7 +60,6 @@
           - "{{ ('bnxt*dkms*' + niccli_pkg_anyarch[ansible_os_family] + niccli_pkg_ext[ansible_os_family]) if niccli_driver is truthy(convert_bool=True) else omit }}"
           # archives tend to include 'libbnxt_re' as an RPM [for many dists/releases] but no DEBs
           - "{{ 'libbnxt_re*' + ansible_architecture + ('el' + ansible_distribution_major_version if ansible_os_family in ['RedHat'] else '') + niccli_pkg_ext[ansible_os_family] }}"
-          - "{{ 'netxtreme-peer-mem*' + niccli_pkg_anyarch[ansible_os_family] + niccli_pkg_ext[ansible_os_family] }}"  # provides 'peer_mem' interface, packaged as source - noarch
         excludes:  # this considers the file base name only; not the path
           - '*sles*'  # SUSE linux enterprise server
           - '*debug*'  # packages with debug symbols
@@ -95,6 +94,41 @@
       ignore_errors: "{{ module.ignore_errors | default(false) }}"
       loop_control: { loop_var: module }
       when: niccli_driver is truthy(convert_bool=True)
+
+    - name: "Check '/proc/kallsyms' for 'ib_umem_get_peer', determine if 'netxtreme-peer-mem' is required"
+      ansible.builtin.command: 'grep ib_umem_get_peer /proc/kallsyms'
+      changed_when: false  # gathering info
+      ignore_errors: true  # failure is a desirable signal. if symbol is *not* present: 'netxtreme-peer-mem' is pulled in for support
+      register: cmd_ib_umem_chk
+      tags:
+        - test
+
+    - name: Handle 'netxtreme-peer-mem' on required kernel/driver/userspace pairings
+      when:
+        - niccli_driver is truthy(convert_bool=True)
+        - cmd_ib_umem_chk is failed
+      tags:
+        - test
+      block:
+
+        - name: "Search for 'netxtreme-peer-mem' package in '/tmp/niccli'"
+          register: niccli_peermem_search
+          ansible.builtin.find:
+            paths: '/tmp/niccli'
+            recurse: true
+            pattern: "{{ 'netxtreme-peer-mem*' + niccli_pkg_anyarch[ansible_os_family] + niccli_pkg_ext[ansible_os_family] }}"  # provides 'peer_mem' interface for certain kernels, packaged as source with dkms (noarch)
+            excludes:  # this considers the file base name only; not the path
+              - '*sles*'  # SUSE linux enterprise server
+              - '*debug*'  # packages with debug symbols
+
+        - name: Install 'netxtreme-peer-mem' package
+          become: true
+          ansible.builtin.package:  # managers behind the 'package' module are inconsistent with file paths given to 'name'. specifically, apt/deb
+            name: "{{ niccli_peermem_pkg if ansible_os_family in ['RedHat'] else omit }}"
+            deb: "{{ niccli_peermem_pkg if ansible_os_family in ['Debian'] else omit }}"
+            disable_gpg_check: "{{ true if ansible_os_family in ['RedHat'] else omit }}"
+          vars:
+            niccli_peermem_pkg: "{{ (niccli_peermem_search.files | map(attribute='path') | reject('search', 'aarch64')) | first }}"
 
     - name: 'Gather package facts'
       ansible.builtin.package_facts:
