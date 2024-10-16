@@ -74,7 +74,6 @@
       loop: "{{ (niccli_pkgs.files | map(attribute='path') | reject('search', 'aarch64')) | sort }}"
       # reject 'aarch64'; search can be greedy. Broadcom archives may repeat arch-free packages in arch-specific directories
       loop_control: { loop_var: candidate }
-      ignore_errors: "{{ 'netxtreme-peer-mem' in candidate }}"  # doesn't build against kernels with 'ib_peer_mem' mainlined
 
     # Looping installation above was found to be necessary due to the issues outlined here:
     #     https://github.com/ansible/ansible/issues/7513
@@ -91,7 +90,6 @@
       loop:
         - { name: bnxt_en }
         - { name: bnxt_re }
-        - { name: ib_peer_mem, ignore_errors: true }  # only builds/loads when 'ib_peer_mem' is *not* part of the kernel
       ignore_errors: "{{ module.ignore_errors | default(false) }}"
       loop_control: { loop_var: module }
       when: niccli_driver is truthy(convert_bool=True)
@@ -101,15 +99,12 @@
       changed_when: false  # gathering info
       ignore_errors: true  # failure is a desirable signal. if symbol is *not* present: 'netxtreme-peer-mem' is pulled in for support
       register: cmd_ib_umem_chk
-      tags:
-        - test
 
     - name: Handle 'netxtreme-peer-mem' on required kernel/driver/userspace pairings
+      become: true
       when:
         - niccli_driver is truthy(convert_bool=True)
         - cmd_ib_umem_chk is failed
-      tags:
-        - test
       block:
 
         - name: "Search for 'netxtreme-peer-mem' package in '/tmp/niccli'"
@@ -123,13 +118,18 @@
               - '*debug*'  # packages with debug symbols
 
         - name: Install 'netxtreme-peer-mem' package
-          become: true
           ansible.builtin.package:  # managers behind the 'package' module are inconsistent with file paths given to 'name'. specifically, apt/deb
             name: "{{ niccli_peermem_pkg if ansible_os_family in ['RedHat'] else omit }}"
             deb: "{{ niccli_peermem_pkg if ansible_os_family in ['Debian'] else omit }}"
             disable_gpg_check: "{{ true if ansible_os_family in ['RedHat'] else omit }}"
           vars:
             niccli_peermem_pkg: "{{ (niccli_peermem_search.files | map(attribute='path') | reject('search', 'aarch64')) | first }}"
+
+        - name: Load 'ib_peer_mem'
+          community.general.modprobe:
+            name: ib_peer_mem
+            state: present
+            persistent: present
 
     - name: 'Gather package facts'
       ansible.builtin.package_facts:
