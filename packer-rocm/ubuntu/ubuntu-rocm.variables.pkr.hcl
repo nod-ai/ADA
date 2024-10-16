@@ -59,13 +59,13 @@ variable "niccli_wanted" {
 
 variable "niccli_url" {
   type = string
-  default = "https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip"
+  default = "https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA2/bcm5760x_231.2.63.0a.zip"
   description = "The URL for the `niccli` archive."
 }
 
 variable "niccli_sum" {
   type = string
-  default = "sha256:1dd2a7c6978c978febfc08ef2f416b2745573848d45700737d4b1405d8e1ac35"
+  default = "sha256:5c46de9addf9284fb48fef1c505c470c85fd4c129045bdd8ee706447bc1bd025"
   description = "Checksum for validating `niccli_url`."
 }
 
