@@ -71,8 +71,8 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
 
 | Variable | Description | Default |
 |:----------:|-------------|:---------:|
-| `rocm_releases` | One or more versions to include _[as a comma-separated string]_.<br/>Newest selects the `amdgpu` driver. | _6.2.2_ |
-| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_. | _mesa-amdgpu-va-drivers,linux-headers-generic-hwe-22.04=5.15.*_ |
+| `rocm_releases` | One or more versions to include _[as a comma-separated string]_.<br/>Newest selects the `amdgpu` driver. | `6.2.2` |
+| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_. | `mesa-amdgpu-va-drivers,linux-headers-generic-hwe-22.04=5.15.*` |
 | `rocm_kernel` | The kernel package with an optional release specifier.<br/>Headers/others may be defined in `rocm_extras` | `linux-image-generic-hwe-22.04=5.15.*` |
 | `rocm_installed` | If _ROCm_ packages are installed. The `amdgpu` _driver/extras_ are, always. | `False` |
 | `rocm_builder_disk` | Space given to the builder VM; releases compound quickly. | _70G_ |
