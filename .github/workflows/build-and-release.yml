@@ -23,7 +23,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.21'  # Make sure this matches your go.mod file
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v0.10.2
@@ -55,6 +55,11 @@ jobs:
       - name: Build
         run: |
           cd redfish-exporter
+          # Generate API
+          cd api
+          make
+          cd ..
+          # Main build
           go mod tidy
           go mod verify
           make
