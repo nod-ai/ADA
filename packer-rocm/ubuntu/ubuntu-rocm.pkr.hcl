@@ -36,24 +36,37 @@ source "qemu" "rocm" {
 build {
   sources = ["source.qemu.rocm"]
 
-  # 'tgz' of custom packages not copied or managed with Makefile. instead: copied by 'file' Packer provisioner, processed by Ansible
+  # generate/copy tarball of custom packages; 'packer-maas' will process
+  provisioner "shell-local" {
+    inline = [
+      "tar cvzf ${path.root}/custom-packages.tar.gz -C ${path.root}/packages --overwrite .",
+    ]
+    inline_shebang = "/bin/bash -e"
+  }
+  provisioner "file" {
+    destination = "/tmp/"
+    generated   = true
+    sources     = [
+      "${path.root}/custom-packages.tar.gz"
+    ]
+  }
+
+  # copy supporting 'packer-maas' assets
   provisioner "file" {
     destination = "/tmp/"
     sources     = [
       "${path.root}/scripts/curtin-hooks",
       "${path.root}/scripts/setup-bootloader",
       "${path.root}/scripts/install-custom-packages"
-    ]  # last script only copied to allow 'curtin.sh'/hooks to be satisfied
+    ]
   }
 
-  # docs suggest destination be made first with 'shell' when copying directories to avoid non-determinism
+  # remove step/message from 'install-custom-packages' RE: uninstalling existing kernels; DKMS/'cloud-init'
   provisioner "shell" {
-    inline = ["mkdir /tmp/packer-pkgs"]
-  }
-
-  provisioner "file" {
-    destination = "/tmp/packer-pkgs"
-    source = "${path.root}/../packages/"
+    inline_shebang = "/bin/bash"
+    inline = [
+      "sed -i -e '/remove existing kernels/d' -e '/xargs apt-get -y purge/d' /tmp/install-custom-packages",
+    ]
   }
 
   provisioner "shell" {
@@ -93,17 +106,6 @@ build {
     extra_arguments = [
       "-e", "ansible_python_interpreter=/usr/bin/python3",
       "--scp-extra-args", "'-O'"
-    ]
-  }
-
-  provisioner "ansible" {
-    playbook_file = "${path.root}/../playbooks/package-globber.yml"
-    user          = "ubuntu"
-    ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
-    extra_arguments = [
-      "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
-      "--scp-extra-args", "'-O'",
-      "-e", "packages=/tmp/packer-pkgs"  # search path populated by 'file' provisioner above
     ]
   }
 
@@ -160,9 +162,10 @@ build {
       "else",
       "  echo '*Not* mapping gzip to pigz for parallel compression'",
       "fi",
+      # mount the image, prepare the tarball, compress, and finally clean up temporary i/o
       "source ../scripts/fuse-nbd",
       "source ../scripts/fuse-tar-root",
-      "rm -rf output-${source.name}"
+      "rm -rf output-${source.name} ${path.root}/custom-packages.tar.gz"
     ]
     inline_shebang = "/bin/bash -e"
   }

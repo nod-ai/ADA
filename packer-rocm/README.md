@@ -36,7 +36,7 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
     git clone https://github.com/nod-ai/ADA.git
     ```
 
-    Place any `.deb` or `.rpm` packages to include with the image(s) in `ADA/packer-rocm/packages/`
+    Place any `.deb` packages to include with the image in `ADA/packer-rocm/ubuntu/packages/`
 
 2. Copy assets from _ADA_ `packer-rocm` to the _Canonical_ `packer-maas` source:
 
@@ -60,7 +60,7 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
 
     # Build
     PACKER_LOG=1 packer build \
-        -var kernel=linux-generic \
+        -var kernel=linux-hwe \
         -var rocm_releases="6.2.2,6.2.1" \
         -var rocm_extras="mesa-amdgpu-va-drivers,ansible" \
         -var rocm_builder_disk="70G" \
@@ -80,7 +80,7 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
 | `niccli_sum` | Optional, string. Checksum to use for validating `niccli_url`.<br/>Example: `sha256:abcd1234` | _Undefined_ |
 | `niccli_driver` | If the `bnxt_{en,re}` NIC drivers are included. | `True` |
 | `headless` | If the VNC window for the VM is _hidden_ during build. | `True` |
-| `kernel` | _MaaS_ images do not _typically_ include a kernel. Set this to include one. | _Ansible:_ `linux-generic`<br />_Manual:_ None |
+| `kernel` | _MaaS_ images do not _typically_ include a kernel. Set this to include one. | _Ansible:_ `linux-hwe`<br />_Manual:_ None |
 
 #### MaaS
 
