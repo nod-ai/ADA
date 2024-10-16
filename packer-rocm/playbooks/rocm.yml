@@ -39,13 +39,6 @@
     rocm_fedora_el: '9.4'  # NOTE: placeholder, for testing: assume equivalence between this RHEL release and 'current Fedora'
   tasks:
 
-    - name: "Install any 'extra' packages before 'amdgpu-dkms' or ROCm"
-      ansible.builtin.package:
-        name: "{{ rocm_extras | split(',') }}"
-        state: present
-        update_cache: true
-      when: rocm_extras is defined
-
     - name: "Sort ROCm version requests"
       ansible.builtin.set_fact:
         rocm_release_peak: "{{ (rocm_requests | community.general.version_sort) | last }}"
@@ -123,6 +116,13 @@
             filename: rocm
           loop: "{{ rocm_requests }}"
           loop_control: { loop_var: rocm_release }
+
+    - name: "Install any 'extra' packages before 'amdgpu-dkms' or ROCm"
+      ansible.builtin.package:
+        name: "{{ rocm_extras | split(',') }}"
+        state: present
+        update_cache: true
+      when: rocm_extras is defined
 
     - name: "Install 'amdgpu-dkms'"
       ansible.builtin.package:
