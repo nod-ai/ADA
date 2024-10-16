@@ -45,12 +45,12 @@ jobs:
           fi
 
       - name: Cache Go modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/redfish-exporter/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
@@ -74,11 +74,11 @@ jobs:
           path: redfish-exporter/amd-redfish-exporter
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.set_version.outputs.version }}
           name: Release ${{ steps.set_version.outputs.version }}
-          draft: false
+          draft: true
           prerelease: false
           files: |
             ./redfish-exporter/amd-redfish-exporter
