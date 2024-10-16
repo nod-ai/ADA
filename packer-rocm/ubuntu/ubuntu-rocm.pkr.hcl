@@ -61,6 +61,14 @@ build {
     ]
   }
 
+  # remove step/message from 'install-custom-packages' RE: uninstalling existing kernels; DKMS/'cloud-init'
+  provisioner "shell" {
+    inline_shebang = "/bin/bash"
+    inline = [
+      "sed -i -e '/remove existing kernels/d' -e '/xargs apt-get -y purge/d' /tmp/install-custom-packages",
+    ]
+  }
+
   provisioner "shell" {
     environment_vars  = ["HOME_DIR=/home/ubuntu", "http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
     execute_command   = "{{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
