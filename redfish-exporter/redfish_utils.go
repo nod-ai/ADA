@@ -268,3 +268,13 @@ func getServerInfo(redfishServers []RedfishServer, serverIP string) RedfishServe
 	}
 	return RedfishServer{}
 }
+
+func getServerInfoByIP(redfishServers []RedfishServer, IP string) RedfishServer {
+	for _, redfishServer := range redfishServers {
+		ip := redfishServer.IP
+		if IP == extractHost(ip) {
+			return redfishServer
+		}
+	}
+	return RedfishServer{}
+}

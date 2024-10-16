@@ -27,6 +27,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 
 	"github.com/nod-ai/ADA/redfish-exporter/metrics"
 	"github.com/nod-ai/ADA/redfish-exporter/slurm"
@@ -221,7 +222,11 @@ func (s *Server) processRequest(AppConfig Config, conn net.Conn, req *http.Reque
 				log.Printf("Matched Trigger Event: %s with action %s", triggerEvent.Severity, triggerEvent.Action)
 				// Sending event belongs to redfish_utils. Each server may have different slurm node associated, and redfish_servers has the info/map.
 				if s.slurmQueue != nil {
-					redfishServerInfo := getServerInfo(AppConfig.RedfishServers, fmt.Sprintf("https://%v", ip))
+					redfishServerInfo := getServerInfoByIP(AppConfig.RedfishServers, ip)
+					if len(strings.TrimSpace(redfishServerInfo.SlurmNode)) == 0 {
+						log.Printf("failed to get the slurm node name, cannot perform action: %v", triggerEvent.Action)
+						break
+					}
 					s.slurmQueue.Add(redfishServerInfo.IP, redfishServerInfo.SlurmNode, triggerEvent.Severity, triggerEvent.Action)
 				}
 				break

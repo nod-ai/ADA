@@ -14,6 +14,7 @@ test:
 	go test -v ./...
 
 clean:
+	cd api; make clean; cd ../
 	go clean
 	rm -f $(BINARY_NAME)
 
