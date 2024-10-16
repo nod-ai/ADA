@@ -64,7 +64,7 @@
           - '*sles*'  # SUSE linux enterprise server
           - '*debug*'  # packages with debug symbols
 
-    - name: 'Install packages [found by OS family]'
+    - name: 'Install packages [found by OS family]'  # noqa: ignore-errors ('failed_when' hides context from output/logs; the choice to proceed with failure)
       become: true
       ansible.builtin.package:
         name: "{{ candidate if ansible_os_family in ['RedHat'] else omit }}"
@@ -74,6 +74,7 @@
       loop: "{{ (niccli_pkgs.files | map(attribute='path') | reject('search', 'aarch64')) | sort }}"
       # reject 'aarch64'; search can be greedy. Broadcom archives may repeat arch-free packages in arch-specific directories
       loop_control: { loop_var: candidate }
+      ignore_errors: "{{ 'netxtreme-peer-mem' in candidate }}"  # doesn't build against kernels with 'ib_peer_mem' mainlined
 
     # Looping installation above was found to be necessary due to the issues outlined here:
     #     https://github.com/ansible/ansible/issues/7513

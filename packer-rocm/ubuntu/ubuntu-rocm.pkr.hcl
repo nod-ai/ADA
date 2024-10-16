@@ -70,10 +70,10 @@ build {
   }
 
   provisioner "shell" {
-    environment_vars  = ["HOME_DIR=/home/ubuntu", "http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
+    environment_vars  = ["HOME_DIR=/home/ubuntu", "http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}", "CLOUDIMG_CUSTOM_KERNEL=${var.rocm_kernel}", "DEBIAN_FRONTEND=noninteractive"]
     execute_command   = "{{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
     expect_disconnect = true
-    scripts           = ["${path.root}/scripts/curtin.sh", "${path.root}/scripts/networking.sh"]
+    scripts           = ["${path.root}/scripts/curtin.sh", "${path.root}/scripts/networking.sh", "${path.root}/scripts/cloudimg/install-custom-kernel.sh"]
   }
 
   provisioner "ansible" {
@@ -134,10 +134,12 @@ build {
   }
 
   provisioner "shell" {
+    environment_vars = [
+      "DEBIAN_FRONTEND=noninteractive"
+    ]
     execute_command   = "{{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
     inline_shebang = "/bin/bash"  # not giving '-e'; allow clean-up drift - don't fail if a task fails
     inline = [
-      "export DEBIAN_FRONTEND=noninteractive",
       "apt-get autoremove --purge -yq",
       "apt-get clean -yq",
       "cloud-init clean --logs --machine-id --configs all",

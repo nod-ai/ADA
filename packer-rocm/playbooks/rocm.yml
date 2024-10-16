@@ -117,6 +117,13 @@
           loop: "{{ rocm_requests }}"
           loop_control: { loop_var: rocm_release }
 
+    - name: "Install any 'extra' packages before 'amdgpu-dkms' or ROCm"
+      ansible.builtin.package:
+        name: "{{ rocm_extras | split(',') }}"
+        state: present
+        update_cache: true
+      when: rocm_extras is defined
+
     - name: "Install 'amdgpu-dkms'"
       ansible.builtin.package:
         name: amdgpu-dkms
@@ -129,12 +136,5 @@
       loop: "{{ rocm_requests | community.general.version_sort }}"
       loop_control: { loop_var: _rel }
       when: rocm_installed is truthy(convert_bool=True)
-
-    - name: "Install remaining packages"
-      ansible.builtin.package:
-        name: "{{ rocm_extras | split(',') }}"
-        state: present
-        update_cache: true
-      when: rocm_extras is defined
 
 # vim: ft=yaml.ansible

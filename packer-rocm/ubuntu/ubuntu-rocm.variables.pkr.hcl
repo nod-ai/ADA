@@ -9,6 +9,12 @@ variable "rocm_filename" {
   description = "The name of the output file/artifact (tarball)"
 }
 
+variable "rocm_kernel" {
+  type = string
+  default = "linux-image-generic-hwe-22.04=5.15.*"
+  description = "The kernel to include with the image. May include version specifier. Software will be compiled against this; define headers/others in 'rocm_extras'"
+}
+
 variable "rocm_releases" {
   type = string
   default = "6.2.2"
@@ -23,7 +29,7 @@ variable "rocm_installed" {
 
 variable "rocm_extras" {
   type = string
-  default = "mesa-amdgpu-va-drivers"
+  default = "mesa-amdgpu-va-drivers,linux-headers-generic-hwe-22.04=5.15.*"
   description = "Comma-separated string of extra packages to install [after 'amdgpu-dkms' and ROCm releases]"
 }
 
