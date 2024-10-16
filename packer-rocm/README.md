@@ -62,7 +62,7 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
     PACKER_LOG=1 packer build \
         -var kernel="linux-image-generic-hwe-22.04=5.15.*" \
         -var rocm_releases="6.2.2,6.2.1" \
-        -var rocm_extras="mesa-amdgpu-va-drivers,ansible" \
+        -var rocm_extras="mesa-amdgpu-va-drivers,linux-headers-generic-hwe-22.04=5.15.*" \
         -var rocm_builder_disk="70G" \
         -only=qemu.rocm .
     ```

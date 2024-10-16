@@ -29,7 +29,7 @@ variable "rocm_installed" {
 
 variable "rocm_extras" {
   type = string
-  default = "mesa-amdgpu-va-drivers"
+  default = "mesa-amdgpu-va-drivers,linux-headers-generic-hwe-22.04=5.15.*"
   description = "Comma-separated string of extra packages to install [after 'amdgpu-dkms' and ROCm releases]"
 }
 
