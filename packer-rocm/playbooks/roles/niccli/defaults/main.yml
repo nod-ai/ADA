@@ -42,7 +42,6 @@ niccli_requirements:  # mapped by 'ansible_os_family' fact
     - kernel-headers
     - kernel-devel-matched
     - kernel-modules-extra
-    - gcc-toolset-12-libstdc++-devel  # this (or the next for libstdc++) may be superfluous
     - libstdc++-devel
     - libaio-devel
     - libibumad
