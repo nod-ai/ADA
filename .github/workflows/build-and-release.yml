@@ -46,14 +46,15 @@ jobs:
 
       - name: Build
         run: |
-          cd Redfish
+          cd redfish-exporter
           make
+        working-directory: ${{ github.workspace }}
 
       - name: Store artifact
         uses: actions/upload-artifact@v3
         with:
-          name: redfish-${{ steps.set_version.outputs.version }}
-          path: Redfish/build/
+          name: redfish-exporter-${{ steps.set_version.outputs.version }}
+          path: redfish-exporter/amd-redfish-exporter
 
       - name: Create Release
         id: create_release
@@ -72,6 +73,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Redfish/build/redfish
-          asset_name: redfish-${{ steps.set_version.outputs.version }}
+          asset_path: ./redfish-exporter/amd-redfish-exporter
+          asset_name: amd-redfish-exporter-${{ steps.set_version.outputs.version }}
           asset_content_type: application/octet-stream
