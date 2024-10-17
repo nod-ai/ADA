@@ -7,6 +7,10 @@
   vars:
     packer_rocm_dir: "{{ (playbook_dir, '..') | path_join }}"
     packer_maas_dir: "{{ (packer_rocm_dir, 'packer-maas') | path_join }}"
+    packer_dist: 'ubuntu'
+    packer_var_hcl: "{{ (packer_dist, packer_dist + '-rocm.variables.pkr.hcl') | path_join }}"  # eg: 'ubuntu/ubuntu-rocm.variables.pkr.hcl'
+    # input variables are read from Packer HCL; matching instances given to Ansible will override 'packer build'
+    # extra-vars ('-e var=value', host_vars, or group_vars all apply
   tasks:
     - name: Preparation
       tags: ['prep']
@@ -28,25 +32,26 @@
               - "--exclude='packer-maas'"
 
         - name: "Ensure Packer plugins are installed"
-          ansible.builtin.command: "packer init {{ (packer_maas_dir, 'ubuntu') | path_join }}"
+          ansible.builtin.command: "packer init {{ (packer_maas_dir, packer_dist) | path_join }}"
           changed_when: false
 
+    - name: Read 'packer-rocm' HCL variables
+      ansible.builtin.command: >
+        awk '$1 == "variable" {print $2}' {{ (packer_rocm_dir, packer_var_hcl) | path_join }}
+      register: packer_rocm_hcl_awk
+      changed_when: false
+
+    - name: Set 'packer-rocm' vars as build fact
+      ansible.builtin.set_fact:
+        packer_vars: "{{ packer_rocm_hcl_awk.stdout_lines | replace('\"', '') }}"
+
     - name: Build
-      ansible.builtin.command:  # TODO: improve command preparation, rely on Packer defaults [and avoid typing problems] when Ansible extra-vars are unspecified
+      ansible.builtin.command:
         cmd: >
           packer build
-          -var headless={{ headless | default('true') }}
-          -var rocm_extras={{ rocm_extras | default('mesa-amdgpu-va-drivers,linux-headers-generic-hwe-22.04') }}
-          -var rocm_kernel={{ rocm_kernel | default('linux-image-generic-hwe-22.04') }}
-          -var rocm_releases=\"{{ (rocm_releases | default('6.2.2')) }}\"
-          -var rocm_builder_disk={{ rocm_builder_disk | default('70G') }}
-          -var rocm_builder_cpus={{ rocm_builder_cpus | default(4) }}
-          -var rocm_builder_memory={{ rocm_builder_memory | default(4096) }}
-          -var rocm_installed={{ rocm_installed | default('false') }}
-          -var niccli_wanted={{ niccli_wanted | default('true') }}
-          -var niccli_driver={{ niccli_driver | default('true') }}
-          -var niccli_url={{ niccli_url | default('https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA2/bcm5760x_231.2.63.0a.zip') }}
-          -var niccli_sum={{ niccli_sum | default('sha256:5c46de9addf9284fb48fef1c505c470c85fd4c129045bdd8ee706447bc1bd025') }}
+          {% for _var in packer_vars if vars[_var] is defined %}
+          {{ '-var ' + _var + '=' + vars[_var] }}
+          {% endfor %}
           -only=qemu.rocm .
         chdir: "{{ build_dir }}"
         creates: "{{ (build_dir, 'ubuntu-rocm.dd.gz') | path_join }}"  # avoid overwriting - require delete
