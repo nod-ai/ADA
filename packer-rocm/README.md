@@ -22,9 +22,7 @@ project.
 
 ```shell
 ansible-galaxy collection install ansible.posix community.general
-ansible-pull -U https://github.com/nod-ai/ADA.git \
-    packer-rocm/playbooks/build.yml \
-    -C main \
+ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml \
     -e rocm_releases=6.2.2,6.2.1 \
     -e rocm_kernel=linux-image-generic-hwe-22.04 \
     -e rocm_extras=linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers \
