@@ -8,7 +8,7 @@
     packer_rocm_dir: "{{ (playbook_dir, '..') | path_join }}"
     packer_maas_dir: "{{ (packer_rocm_dir, 'packer-maas') | path_join }}"
     packer_dist: 'ubuntu'
-    packer_var_hcl: '{{ packer_dist }}/{{ packer_dist }}-rocm.variables.pkr.hcl'
+    packer_var_hcl: "{{ (packer_dist, packer_dist + '-rocm.variables.pkr.hcl') | path_join }}"  # eg: 'ubuntu/ubuntu-rocm.variables.pkr.hcl'
     # input variables are read from Packer HCL; matching instances given to Ansible will override 'packer build'
     # extra-vars ('-e var=value', host_vars, or group_vars all apply
   tasks:
