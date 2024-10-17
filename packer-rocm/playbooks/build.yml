@@ -7,19 +7,10 @@
   vars:
     packer_rocm_dir: "{{ (playbook_dir, '..') | path_join }}"
     packer_maas_dir: "{{ (packer_rocm_dir, 'packer-maas') | path_join }}"
-    packer_vars:  # override 'packer build' if any of these are defined (with '-e var=value', inventory, or host/group vars)
-      - headless
-      - rocm_extras
-      - rocm_kernel
-      - rocm_releases
-      - rocm_builder_disk
-      - rocm_builder_cpus
-      - rocm_builder_memory
-      - rocm_installed
-      - niccli_wanted
-      - niccli_driver
-      - niccli_url
-      - niccli_sum
+    packer_dist: 'ubuntu'
+    packer_var_hcl: '{{ packer_dist }}/{{ packer_dist }}-rocm.variables.pkr.hcl'
+    # input variables are read from Packer HCL; matching instances given to Ansible will override 'packer build'
+    # extra-vars ('-e var=value', host_vars, or group_vars all apply
   tasks:
     - name: Preparation
       tags: ['prep']
@@ -41,8 +32,18 @@
               - "--exclude='packer-maas'"
 
         - name: "Ensure Packer plugins are installed"
-          ansible.builtin.command: "packer init {{ (packer_maas_dir, 'ubuntu') | path_join }}"
+          ansible.builtin.command: "packer init {{ (packer_maas_dir, packer_dist) | path_join }}"
           changed_when: false
+
+    - name: Read 'packer-rocm' HCL variables
+      ansible.builtin.command: >
+        awk '$1 == "variable" {print $2}' {{ (packer_rocm_dir, packer_var_hcl) | path_join }}
+      register: packer_rocm_hcl_awk
+      changed_when: false
+
+    - name: Set 'packer-rocm' vars as build fact
+      ansible.builtin.set_fact:
+        packer_vars: "{{ packer_rocm_hcl_awk.stdout_lines | replace('\"', '') }}"
 
     - name: Build
       ansible.builtin.command:
