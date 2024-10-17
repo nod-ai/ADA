@@ -22,10 +22,17 @@ project.
 
 ```shell
 ansible-galaxy collection install ansible.posix community.general
-ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml
+ansible-pull -U https://github.com/nod-ai/ADA.git \
+    packer-rocm/playbooks/build.yml \
+    -C main \
+    -e rocm_releases=6.2.2,6.2.1 \
+    -e rocm_kernel=linux-image-generic-hwe-22.04 \
+    -e rocm_extras=linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers \
+    -e rocm_builder_cpus=16 \
+    -e rocm_builder_disk=70G
 ```
 
-Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=value'`
+Please see [I/O](#io) for more variable information
 
 ### Manual
 
@@ -62,7 +69,7 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
     PACKER_LOG=1 packer build \
         -var rocm_releases="6.2.2,6.2.1" \
         -var rocm_kernel="linux-image-generic-hwe-22.04" \
-        -var rocm_extras="mesa-amdgpu-va-drivers,linux-headers-generic-hwe-22.04" \
+        -var rocm_extras="linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers" \
         -var rocm_builder_disk="70G" \
         -only=qemu.rocm .
     ```
@@ -73,9 +80,12 @@ Variables noted in [I/O](#io) may be given like so: `ansible-pull ... -e 'var=va
 |:----------:|-------------|:---------:|
 | `rocm_releases` | One or more versions to include _[comma-separated string]_.<br/>Newest selects the `amdgpu` driver. | `6.2.2` |
 | `rocm_kernel` | The kernel package with an optional release specifier. | `linux-image-generic-hwe-22.04` |
-| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_.<br/>May also specify releases with `=x.y.z` or globbed. | `mesa-amdgpu-va-drivers,linux-headers-generic-hwe-22.04` |
+| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_.<br/>May also specify releases with `=x.y.z` or globbed. | `linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers` |
+| `rocm_filename` | The name of the output file/artifact _(tarball)_ | `ubuntu-rocm.tar.gz` |
 | `rocm_installed` | If _ROCm_ packages are installed. The `amdgpu` _driver/extras_ are, always. | `False` |
-| `rocm_builder_disk` | Space given to the builder VM; releases compound quickly. | _70G_ |
+| `rocm_builder_cpus` | Number of virtual CPUs given to the builder VM. | _4_ |
+| `rocm_builder_disk` | Space given to the builder; releases compound quickly. | _70G_ |
+| `rocm_builder_memory` | Megabytes of memory given to the builder.<br/>Reduction may cause out-of-memory conditions when compiling. | _4096_ |
 | `niccli_wanted` | If [niccli](https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/Configuration-adapter/nic-cli-configuration-utility.html) is included in the image. | `True` |
 | `niccli_url` | The URL for the _Broadcom_ `niccli` installation archive. | [Link](https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip) |
 | `niccli_sum` | Optional, string. Checksum to use for validating `niccli_url`.<br/>Example: `sha256:abcd1234` | _Undefined_ |
