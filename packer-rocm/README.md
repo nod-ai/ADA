@@ -32,7 +32,7 @@ ansible-pull -U https://github.com/nod-ai/ADA.git \
     -e rocm_builder_disk=70G
 ```
 
-Please see [I/O](#io) for more variable information
+All of these variables are _optional_. Please see [I/O](#io) for more.
 
 ### Manual
 
