@@ -14,7 +14,7 @@ source "qemu" "rocm" {
   disk_size       = "${var.rocm_builder_disk}"  # Packer seems to have trouble with strings that begin with numbers; explicitly cast
   memory          = var.rocm_builder_memory
   # image/build prefs
-  accelerator     = "kvm"  # or 'none' if KVM is unavailable
+  # accelerator     = "none"  # Packer will try 'kvm', falling back to 'tcg' if necessary
   boot_command    = ["<wait5>e<wait2>", "<down><down><down><end><wait>", "<bs><bs><bs><bs><wait>autoinstall ---<wait><f10>"]
   boot_wait       = "5s"
   efi_boot        = true
