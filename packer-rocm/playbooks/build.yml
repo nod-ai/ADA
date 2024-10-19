@@ -83,12 +83,6 @@
             state: present
             update_cache: true  # ensures Packer repo/contents are in-view
 
-        - name: "Manage clone for 'packer-maas' under ADA"
-          ansible.builtin.git:
-            repo: "https://github.com/canonical/packer-maas.git"
-            dest: "{{ packer_maas_dir }}"
-            version: "{{ packer_maas_tag | default('9046979a9e92bb0303ef47da180b0af29f03332f') }}"  # current latest ('v1.2.0') lacks several relevant fixes, default to known commit
-
         - name: "Synchronize 'packer-maas' with ADA 'packer-rocm' assets"
           ansible.posix.synchronize:
             src: "{{ packer_rocm_dir }}/"  # trailing '/' on source is significant; copying *contents* of the dir

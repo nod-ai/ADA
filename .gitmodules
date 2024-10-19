@@ -1,3 +1,6 @@
 [submodule "amdchecknode"]
 	path = amdchecknode
 	url = https://github.com/joelandman-amd/amdchecknode.git
+[submodule "packer-rocm/packer-maas"]
+	path = packer-rocm/packer-maas
+	url = https://github.com/canonical/packer-maas.git
