@@ -9,8 +9,8 @@ project.
 
 ### Prerequisites
 
-* [packer](https://developer.hashicorp.com/packer/docs/install)
 * `ansible`: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
+* _Linux_ host
 
 ### Playbook
 
@@ -22,10 +22,13 @@ ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.ym
     -e rocm_kernel=linux-image-generic-hwe-22.04 \
     -e rocm_extras=linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers \
     -e rocm_builder_cpus=16 \
-    -e rocm_builder_disk=70G
+    -e rocm_builder_disk=70G \
+    -K
 ```
 
-All of these variables are _optional_. Please see [I/O](#io) for more.
+Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host _(repositories and packages)_.
+
+**All** of these variables are _optional_. Please see [I/O](#io) for more.
 
 ### Manual
 

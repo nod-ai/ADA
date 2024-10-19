@@ -13,6 +13,7 @@
     # Linux *builder host* prereqs
     packer_prereqs:
       common:
+        - packer
         - qemu-kvm   # provides builder as a Virtual Machine; meta-package
         - git        # 'ansible-pull' requires 'git' to clone; should be installed already
         - rsync      # synchronize module
@@ -41,11 +42,46 @@
       tags: ['prep']
       block:
 
+        - name: Repositories
+          become: true
+          tags: ['repo', 'repos']
+          block:
+
+            - name: 'Packer Repo | RedHat'
+              when: ansible_os_family in ['RedHat']
+              ansible.builtin.get_url:
+                url: "https://rpm.releases.hashicorp.com/{{ packer_rpm_map[ansible_distribution] | default(packer_rpm_map[ansible_os_family]) }}/hashicorp.repo"
+                dest: /etc/yum.repos.d/hashicorp.repo
+                mode: '0644'
+              vars:              # reference: https://developer.hashicorp.com/packer/install
+                packer_rpm_map:  # leverage both 'ansible_distribution' and 'ansible_os_family' facts to construct valid repo spec url
+                  RedHat: RHEL
+                  Fedora: fedora
+                  Amazon: AmazonLinux
+
+            - name: 'Packer Repo Block | Debian'
+              when: ansible_os_family in ['Debian']
+              block:
+
+                - name: 'Packer GPG | Debian'
+                  ansible.builtin.apt_key:
+                    url: https://apt.releases.hashicorp.com/gpg
+                    keyring: /etc/apt/trusted.gpg.d/hashicorp.gpg
+
+                - name: 'Packer Repo | Debian'
+                  ansible.builtin.apt_repository:
+                    repo: >
+                      deb [signed-by=/etc/apt/trusted.gpg.d/hashicorp.gpg]
+                      https://apt.releases.hashicorp.com {{ ansible_lsb.codename }} main
+                    state: present
+                    filename: hashicorp
+
         - name: Install Prerequisites
           become: true
           ansible.builtin.package:  # if host distribution not listed/supported, use the common names alone
             name: "{{ packer_prereqs['common'] + (packer_prereqs[ansible_os_family] | default([])) }}"
             state: present
+            update_cache: true  # ensures Packer repo/contents are in-view
 
         - name: "Manage clone for 'packer-maas' under ADA"
           ansible.builtin.git:
