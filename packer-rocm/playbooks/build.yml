@@ -3,18 +3,50 @@
 # yamllint disable rule:line-length
 - name: Build 'packer-rocm'
   hosts: localhost
-  gather_facts: false
   vars:
+    packer_dist: 'ubuntu'  # placeholder: other distributions may be supported
     packer_rocm_dir: "{{ (playbook_dir, '..') | path_join }}"
     packer_maas_dir: "{{ (packer_rocm_dir, 'packer-maas') | path_join }}"
-    packer_dist: 'ubuntu'
     packer_var_hcl: "{{ (packer_dist, packer_dist + '-rocm.variables.pkr.hcl') | path_join }}"  # eg: 'ubuntu/ubuntu-rocm.variables.pkr.hcl'
-    # input variables are read from Packer HCL; matching instances given to Ansible will override 'packer build'
-    # extra-vars ('-e var=value', host_vars, or group_vars all apply
+    # Ansible is available in more places than our requirements
+    packer_supported_hosts: ['Linux']
+    # Linux *builder host* prereqs
+    packer_prereqs:
+      common:
+        - qemu-kvm   # provides builder as a Virtual Machine; meta-package
+        - git        # 'ansible-pull' requires 'git' to clone; should be installed already
+        - rsync      # synchronize module
+        - xorriso    # cloud-init data
+        - fuse       # pressing final tarball/image
+        - nbdkit     # "
+        - nbdfuse    # "
+      RedHat:
+        - edk2-ovmf  # firmware
+        - e2fsprogs  # provides 'fuse2fs', tarball/image work
+        - nbdkit-nbd-plugin
+      Debian:
+        - ovmf
+        - libnbd-bin
+        - fuse2fs
   tasks:
+
+    - name: Assert supported host
+      tags: ['always']
+      ansible.builtin.assert:
+        that:
+          - ansible_system in packer_supported_hosts
+        fail_msg: "Unsupported host: '{{ ansible_system }}', want: {{ packer_supported_hosts }}"
+
     - name: Preparation
       tags: ['prep']
       block:
+
+        - name: Install Prerequisites
+          become: true
+          ansible.builtin.package:  # if host distribution not listed/supported, use the common names alone
+            name: "{{ packer_prereqs['common'] + (packer_prereqs[ansible_os_family] | default([])) }}"
+            state: present
+
         - name: "Manage clone for 'packer-maas' under ADA"
           ansible.builtin.git:
             repo: "https://github.com/canonical/packer-maas.git"
@@ -35,17 +67,18 @@
           ansible.builtin.command: "packer init {{ (packer_maas_dir, packer_dist) | path_join }}"
           changed_when: false
 
-    - name: Read 'packer-rocm' HCL variables
-      ansible.builtin.command: >
-        awk '$1 == "variable" {print $2}' {{ (packer_rocm_dir, packer_var_hcl) | path_join }}
-      register: packer_rocm_hcl_awk
-      changed_when: false
+        - name: Read 'packer-rocm' HCL variables
+          ansible.builtin.command: >
+            awk '$1 == "variable" {print $2}' {{ (packer_rocm_dir, packer_var_hcl) | path_join }}
+          register: packer_rocm_hcl_awk
+          changed_when: false
 
-    - name: Set 'packer-rocm' vars as build fact
-      ansible.builtin.set_fact:
-        packer_vars: "{{ packer_rocm_hcl_awk.stdout_lines | replace('\"', '') }}"
+        - name: Set 'packer-rocm' vars as build fact
+          ansible.builtin.set_fact:
+            packer_vars: "{{ packer_rocm_hcl_awk.stdout_lines | replace('\"', '') }}"
 
     - name: Build
+      tags: ['build']
       ansible.builtin.command:
         cmd: >
           packer build
