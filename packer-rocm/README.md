@@ -17,6 +17,7 @@ project.
 ```shell
 ansible-galaxy collection install ansible.posix community.general
 ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml \
+    -e qemu_binary=qemu-kvm \
     -e rocm_releases=6.2.2,6.2.1 \
     -e rocm_kernel=linux-image-generic-hwe-22.04 \
     -e rocm_extras=linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers \
@@ -70,6 +71,7 @@ All of these variables are _optional_. Please see [I/O](#io) for more.
 
 | Variable | Description | Default |
 |:----------:|-------------|:---------:|
+| `qemu_binary` | The name _or_ path for the QEMU binary. | `qemu-system-x86_64` |
 | `rocm_releases` | One or more versions to include _[comma-separated string]_.<br/>Newest selects the `amdgpu` driver. | `6.2.2` |
 | `rocm_kernel` | The kernel package with an optional release specifier. | `linux-image-generic-hwe-22.04` |
 | `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_.<br/>May also specify releases with `=x.y.z` or globbed. | `linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers` |
