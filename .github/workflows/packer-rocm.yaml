@@ -1,0 +1,46 @@
+---
+name: Lint 'packer-rocm'
+
+on:
+  push:
+    paths:
+      - 'packer-rocm/**'
+  pull_request:
+    paths:
+      - 'packer-rocm/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.1
+        with:
+          submodules: true
+
+      - uses: actions/setup-python@v5.2.0
+        with:
+          python-version: "3.x"
+          cache: 'pip'
+
+      - name: Cache Ansible Collections
+        uses: actions/cache@v4
+        with:
+          path: ~/.ansible/collections
+          key: ansible-collections-${{ hashFiles('packer-rocm/requirements.yml') }}
+
+      - name: Install Ansible/Collections
+        run: |
+          pip install ansible-core ansible-lint
+          ansible-galaxy collection install -r packer-rocm/requirements.yml
+
+      - name: Run 'ansible-lint'
+        run: |
+          ansible-lint --profile production --parseable --nocolor
+
+      # if Ansible is good, set up Packer/test HCL
+      - name: Setup `packer`
+        uses: https://github.com/hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: "latest"
