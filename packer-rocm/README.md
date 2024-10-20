@@ -16,7 +16,7 @@ project.
 ### Setup
 
 ```shell
-git clone https://github.com/nod-ai/ADA.git
+git clone --recurse-submodules https://github.com/nod-ai/ADA.git
 ansible-galaxy collection install -r ADA/packer-rocm/requirements.yml
 ```
 
