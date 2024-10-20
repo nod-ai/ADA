@@ -95,9 +95,13 @@
             src: "{{ packer_rocm_dir }}/"  # trailing '/' on source is significant; copying *contents* of the dir
             dest: "{{ packer_maas_dir }}"
             rsync_opts:
+              - "--exclude='.git'"
               - "--exclude='*.md'"
+              - "--exclude='ansible.cfg'"
+              - "--exclude='inventories'"
               - "--exclude='NOTICE'"
               - "--exclude='LICENSE'"
+              - "--exclude='TODO'"
               - "--exclude='packer-maas'"
 
         - name: "Ensure Packer plugins are installed"
