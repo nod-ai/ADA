@@ -40,7 +40,7 @@ jobs:
 
       # if Ansible is good, set up Packer/test HCL
       - name: Setup `packer`
-        uses: https://github.com/hashicorp/setup-packer@main
+        uses: setup-packer@v3.1.0
         id: setup
         with:
           version: "latest"
