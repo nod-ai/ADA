@@ -35,9 +35,10 @@ ansible-playbook ADA/packer-rocm/playbooks/build.yml \
     -K
 ```
 
-Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host _(repositories and packages)_.
+Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host.
 
-**All** of these variables are _optional_. Please see [I/O](#io) for more.
+Skip host preparation with `-t build`. **All** of these variables are _optional_.
+Please see [I/O](#io) for more.
 
 ### I/O
 
