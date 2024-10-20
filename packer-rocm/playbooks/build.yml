@@ -5,6 +5,8 @@
   hosts: localhost
   vars:
     packer_dist: 'ubuntu'  # placeholder: other distributions may be supported
+    # system packages assume this path; 'cracklib' (systemd dep) collides with the 'packer' name (in sbin)
+    packer_binary: '/usr/bin/packer'  # PATH reliance may confuse things. override.
     packer_rocm_dir: "{{ (playbook_dir, '..') | path_join }}"
     packer_maas_dir: "{{ (packer_rocm_dir, 'packer-maas') | path_join }}"
     packer_var_hcl: "{{ (packer_dist, packer_dist + '-rocm.variables.pkr.hcl') | path_join }}"  # eg: 'ubuntu/ubuntu-rocm.variables.pkr.hcl'
@@ -13,7 +15,6 @@
     # Linux *builder host* prereqs
     packer_prereqs:
       common:
-        - packer
         - qemu-kvm   # provides builder as a Virtual Machine; meta-package
         - git        # 'ansible-pull' requires 'git' to clone; should be installed already
         - rsync      # synchronize module
@@ -42,9 +43,10 @@
       tags: ['prep']
       block:
 
-        - name: Repositories
+        - name: Packer
           become: true
-          tags: ['repo', 'repos']
+          when: packer_binary is match('/usr/bin/packer')  # only when intending the package-managed executable
+          tags: ['packer']
           block:
 
             - name: 'Packer Repo | RedHat'
@@ -76,12 +78,17 @@
                     state: present
                     filename: hashicorp
 
+            - name: Install 'packer'
+              ansible.builtin.package:
+                name: packer
+                state: present
+                update_cache: true  # ensures Packer repo/contents are in-view
+
         - name: Install Prerequisites
           become: true
           ansible.builtin.package:  # if host distribution not listed/supported, use the common names alone
             name: "{{ packer_prereqs['common'] + (packer_prereqs[ansible_os_family] | default([])) }}"
             state: present
-            update_cache: true  # ensures Packer repo/contents are in-view
 
         - name: "Synchronize 'packer-maas' with ADA 'packer-rocm' assets"
           ansible.posix.synchronize:
@@ -94,7 +101,7 @@
               - "--exclude='packer-maas'"
 
         - name: "Ensure Packer plugins are installed"
-          ansible.builtin.command: "packer init {{ (packer_maas_dir, packer_dist) | path_join }}"
+          ansible.builtin.command: "{{ packer_binary }} init {{ (packer_maas_dir, packer_dist) | path_join }}"
           changed_when: false
 
         - name: Read 'packer-rocm' HCL variables
@@ -111,7 +118,7 @@
       tags: ['build']
       ansible.builtin.command:
         cmd: >
-          packer build
+          {{ packer_binary }} build
           {% for _var in (packer_vars + ['headless', 'http_directory', 'http_proxy', 'https_proxy', 'no_proxy', 'ssh_ubuntu_password', 'ubuntu_release']) if vars[_var] is defined %}
           {{ '-var ' + _var + '=' + vars[_var] }}
           {% endfor %}
