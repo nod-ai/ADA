@@ -12,11 +12,19 @@ project.
 * `ansible`: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
 * _Linux_ host
 
-### Playbook
+### Setup
 
 ```shell
-ansible-galaxy collection install ansible.posix community.general
-ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.yml \
+git clone https://github.com/nod-ai/ADA.git
+ansible-galaxy collection install -r ADA/packer-rocm/requirements.yml
+```
+
+Place any `.deb` packages to include with the image in `ADA/packer-rocm/ubuntu/packages/`
+
+### Build
+
+```shell
+ansible-playbook ADA/packer-rocm/playbooks/build.yml \
     -e rocm_releases=6.2.2,6.2.1 \
     -e rocm_kernel=linux-image-generic-hwe-22.04 \
     -e rocm_extras=linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers \
@@ -29,46 +37,6 @@ ansible-pull -U https://github.com/nod-ai/ADA.git packer-rocm/playbooks/build.ym
 Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host _(repositories and packages)_.
 
 **All** of these variables are _optional_. Please see [I/O](#io) for more.
-
-### Manual
-
-1. Clone repositories:
-
-    ```shell
-    git clone https://github.com/canonical/packer-maas.git
-    git clone https://github.com/nod-ai/ADA.git
-    ```
-
-    Place any `.deb` packages to include with the image in `ADA/packer-rocm/ubuntu/packages/`
-
-2. Copy assets from _ADA_ `packer-rocm` to the _Canonical_ `packer-maas` source:
-
-    ```shell
-    # Repeat '--exclude' with shell expansion, slashes are significant for 'rsync'
-    rsync -avP --exclude={'*.md','LICENSE','NOTICE'} ADA/packer-rocm/ packer-maas/
-    ```
-
-3. Install plugins:
-
-    ```shell
-    cd packer-maas/ubuntu
-    packer init .
-    ```
-
-4. Build
-
-    ```shell
-    # Change working directory to the prepared sources
-    cd packer-maas/ubuntu
-
-    # Build
-    PACKER_LOG=1 packer build \
-        -var rocm_releases="6.2.2,6.2.1" \
-        -var rocm_kernel="linux-image-generic-hwe-22.04" \
-        -var rocm_extras="linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers" \
-        -var rocm_builder_disk="70G" \
-        -only=qemu.rocm .
-    ```
 
 ### I/O
 
@@ -103,8 +71,7 @@ maas admin boot-resources create \
      content@=ubuntu-rocm.tar.gz
 ```
 
-The artifact is named `ubuntu-rocm.tar.gz`. When building with `ansible-pull`, it may be here:  
-`~/.ansible/pull/$HOSTNAME/packer-rocm/packer-maas/ubuntu`
+The artifact will be in `ADA/packer-rocm/packer-maas/ubuntu/`, named `ubuntu-rocm.tar.gz`.
 
 #### Proxy
 
