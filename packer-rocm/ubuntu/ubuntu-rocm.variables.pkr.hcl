@@ -1,3 +1,9 @@
+variable "qemu_binary" {
+  type = string
+  default = "qemu-system-x86_64"
+  description = "The name _or_ path for the QEMU binary."
+}
+
 variable "ubuntu_release" {
   type = string
   default = "22.04.5"

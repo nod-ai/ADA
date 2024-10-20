@@ -3,23 +3,92 @@
 # yamllint disable rule:line-length
 - name: Build 'packer-rocm'
   hosts: localhost
-  gather_facts: false
   vars:
+    packer_dist: 'ubuntu'  # placeholder: other distributions may be supported
+    # system packages assume this path; 'cracklib' (systemd dep) collides with the 'packer' name (in sbin)
+    packer_binary: '/usr/bin/packer'  # PATH reliance may confuse things. override.
     packer_rocm_dir: "{{ (playbook_dir, '..') | path_join }}"
     packer_maas_dir: "{{ (packer_rocm_dir, 'packer-maas') | path_join }}"
-    packer_dist: 'ubuntu'
     packer_var_hcl: "{{ (packer_dist, packer_dist + '-rocm.variables.pkr.hcl') | path_join }}"  # eg: 'ubuntu/ubuntu-rocm.variables.pkr.hcl'
-    # input variables are read from Packer HCL; matching instances given to Ansible will override 'packer build'
-    # extra-vars ('-e var=value', host_vars, or group_vars all apply
+    # Ansible is available in more places than our requirements
+    packer_supported_hosts: ['Linux']
+    # Linux *builder host* prereqs
+    packer_prereqs:
+      common:
+        - qemu-kvm   # provides builder as a Virtual Machine; meta-package
+        - git        # 'ansible-pull' requires 'git' to clone; should be installed already
+        - rsync      # synchronize module
+        - xorriso    # cloud-init data
+        - fuse       # pressing final tarball/image
+        - nbdkit     # "
+        - nbdfuse    # "
+      RedHat:
+        - edk2-ovmf  # firmware
+        - e2fsprogs  # provides 'fuse2fs', tarball/image work
+        - nbdkit-nbd-plugin
+      Debian:
+        - ovmf
+        - libnbd-bin
+        - fuse2fs
   tasks:
+
+    - name: Assert supported host
+      tags: ['always']
+      ansible.builtin.assert:
+        that:
+          - ansible_system in packer_supported_hosts
+        fail_msg: "Unsupported host: '{{ ansible_system }}', want: {{ packer_supported_hosts }}"
+
     - name: Preparation
       tags: ['prep']
       block:
-        - name: "Manage clone for 'packer-maas' under ADA"
-          ansible.builtin.git:
-            repo: "https://github.com/canonical/packer-maas.git"
-            dest: "{{ packer_maas_dir }}"
-            version: "{{ packer_maas_tag | default('9046979a9e92bb0303ef47da180b0af29f03332f') }}"  # current latest ('v1.2.0') lacks several relevant fixes, default to known commit
+
+        - name: Packer
+          become: true
+          when: packer_binary is match('/usr/bin/packer')  # only when intending the package-managed executable
+          tags: ['packer']
+          block:
+
+            - name: 'Packer Repo | RedHat'
+              when: ansible_os_family in ['RedHat']
+              ansible.builtin.get_url:
+                url: "https://rpm.releases.hashicorp.com/{{ packer_rpm_map[ansible_distribution] | default(packer_rpm_map[ansible_os_family]) }}/hashicorp.repo"
+                dest: /etc/yum.repos.d/hashicorp.repo
+                mode: '0644'
+              vars:              # reference: https://developer.hashicorp.com/packer/install
+                packer_rpm_map:  # leverage both 'ansible_distribution' and 'ansible_os_family' facts to construct valid repo spec url
+                  RedHat: RHEL
+                  Fedora: fedora
+                  Amazon: AmazonLinux
+
+            - name: 'Packer Repo Block | Debian'
+              when: ansible_os_family in ['Debian']
+              block:
+
+                - name: 'Packer GPG | Debian'
+                  ansible.builtin.apt_key:
+                    url: https://apt.releases.hashicorp.com/gpg
+                    keyring: /etc/apt/trusted.gpg.d/hashicorp.gpg
+
+                - name: 'Packer Repo | Debian'
+                  ansible.builtin.apt_repository:
+                    repo: >
+                      deb [signed-by=/etc/apt/trusted.gpg.d/hashicorp.gpg]
+                      https://apt.releases.hashicorp.com {{ ansible_lsb.codename }} main
+                    state: present
+                    filename: hashicorp
+
+            - name: Install 'packer'
+              ansible.builtin.package:
+                name: packer
+                state: present
+                update_cache: true  # ensures Packer repo/contents are in-view
+
+        - name: Install Prerequisites
+          become: true
+          ansible.builtin.package:  # if host distribution not listed/supported, use the common names alone
+            name: "{{ packer_prereqs['common'] + (packer_prereqs[ansible_os_family] | default([])) }}"
+            state: present
 
         - name: "Synchronize 'packer-maas' with ADA 'packer-rocm' assets"
           ansible.posix.synchronize:
@@ -32,23 +101,24 @@
               - "--exclude='packer-maas'"
 
         - name: "Ensure Packer plugins are installed"
-          ansible.builtin.command: "packer init {{ (packer_maas_dir, packer_dist) | path_join }}"
+          ansible.builtin.command: "{{ packer_binary }} init {{ (packer_maas_dir, packer_dist) | path_join }}"
           changed_when: false
 
-    - name: Read 'packer-rocm' HCL variables
-      ansible.builtin.command: >
-        awk '$1 == "variable" {print $2}' {{ (packer_rocm_dir, packer_var_hcl) | path_join }}
-      register: packer_rocm_hcl_awk
-      changed_when: false
+        - name: Read 'packer-rocm' HCL variables
+          ansible.builtin.command: >
+            awk '$1 == "variable" {print $2}' {{ (packer_rocm_dir, packer_var_hcl) | path_join }}
+          register: packer_rocm_hcl_awk
+          changed_when: false
 
-    - name: Set 'packer-rocm' vars as build fact
-      ansible.builtin.set_fact:
-        packer_vars: "{{ packer_rocm_hcl_awk.stdout_lines | replace('\"', '') }}"
+        - name: Set 'packer-rocm' vars as build fact
+          ansible.builtin.set_fact:
+            packer_vars: "{{ packer_rocm_hcl_awk.stdout_lines | replace('\"', '') }}"
 
     - name: Build
+      tags: ['build']
       ansible.builtin.command:
         cmd: >
-          packer build
+          {{ packer_binary }} build
           {% for _var in (packer_vars + ['headless', 'http_directory', 'http_proxy', 'https_proxy', 'no_proxy', 'ssh_ubuntu_password', 'ubuntu_release']) if vars[_var] is defined %}
           {{ '-var ' + _var + '=' + vars[_var] }}
           {% endfor %}
