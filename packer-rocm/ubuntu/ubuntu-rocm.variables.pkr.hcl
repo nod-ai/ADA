@@ -1,3 +1,9 @@
+variable "hidden" {
+  type = bool
+  default = true
+  description = "If the VNC display for the Virtual Machine is hidden while building the image. Adds display requirements"
+}
+
 variable "qemu_binary" {
   type = string
   default = "qemu-system-x86_64"

@@ -44,8 +44,9 @@ Please see [I/O](#io) for more.
 
 | Variable | Description | Default |
 |:----------:|-------------|:---------:|
-| `qemu_binary` | The name _or_ path for the _QEMU_ binary. | `qemu-system-x86_64` |
+| `hidden` | If the VNC window for the VM is _hidden_ during build.<br/>Adjustment brings _display_ requirements. | `True` |
 | `packer_binary` | The name _or_ path for the _Packer_ binary.<br/>Installation skipped if overridden. | `/usr/bin/packer` |
+| `qemu_binary` | The name _or_ path for the _QEMU_ binary. | `qemu-system-x86_64` |
 | `rocm_releases` | One or more versions to include _[comma-separated]_.<br/>Newest selects the `amdgpu` driver. | `6.2.2` |
 | `rocm_kernel` | The kernel package with an optional release specifier. | `linux-image-generic-hwe-22.04` |
 | `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_.<br/>Comma-separated. May include releases with `=x.y.z` or globbing. | `linux-headers-generic-hwe-22.04`<br/>`mesa-amdgpu-va-drivers` |
@@ -58,7 +59,6 @@ Please see [I/O](#io) for more.
 | `niccli_url` | The URL for the _Broadcom_ `niccli` installation archive. | [Link](https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip) |
 | `niccli_sum` | _Optional_. Checksum to validate `niccli_url` downloads.<br/>Example: `sha256:abcd1234` | _Undefined_ |
 | `niccli_driver` | If the `bnxt_{en,re}` NIC drivers are included. | `True` |
-| `headless` | If the VNC window for the VM is _hidden_ during build. | `True` |
 
 #### MaaS
 
