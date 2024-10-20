@@ -29,18 +29,20 @@ jobs:
           path: ~/.ansible/collections
           key: ansible-collections-${{ hashFiles('packer-rocm/requirements.yml') }}
 
-      - name: Install Ansible/Collections
+      - name: Install Ansible and Collections
         run: |
           pip install ansible-core ansible-lint
           ansible-galaxy collection install -r packer-rocm/requirements.yml
 
-      - name: Run 'ansible-lint'
+      - name: ansible-lint
         run: |
-          ansible-lint --profile production --parseable --nocolor
+          ansible-lint --profile production --parseable --nocolor packer-rocm/
 
-      # if Ansible is good, set up Packer/test HCL
-      - name: Setup `packer`
-        uses: hashicorp/setup-packer@v3.1.0
-        id: setup
-        with:
-          version: "latest"
+      # if Ansible passes, set up Packer/test HCL. 
+      # challenge: many strict references to 'packer-maas' that are out-of-place until playbook-run.
+
+#      - name: Setup `packer`
+#        uses: hashicorp/setup-packer@v3.1.0
+#        id: setup
+#        with:
+#          version: "latest"
