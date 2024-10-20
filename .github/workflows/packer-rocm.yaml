@@ -10,7 +10,7 @@ on:
       - 'packer-rocm/**'
 
 jobs:
-  lint:
+  ansible-lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
