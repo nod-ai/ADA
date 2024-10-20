@@ -80,13 +80,13 @@ Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is 
 | `rocm_kernel` | The kernel package with an optional release specifier. | `linux-image-generic-hwe-22.04` |
 | `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_.<br/>May also specify releases with `=x.y.z` or globbed. | `linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers` |
 | `rocm_filename` | The name of the output file/artifact _(tarball)_ | `ubuntu-rocm.tar.gz` |
-| `rocm_installed` | If _ROCm_ packages are installed. The `amdgpu` _driver/extras_ are, always. | `False` |
+| `rocm_installed` | If _ROCm_ multi-release packages are installed.<br/>The `amdgpu` _driver/extras_ are, always. | `False` |
 | `rocm_builder_cpus` | Number of virtual CPUs given to the builder VM. | _4_ |
 | `rocm_builder_disk` | Space given to the builder; releases compound quickly. | _70G_ |
-| `rocm_builder_memory` | Megabytes of memory given to the builder.<br/>Reduction may cause out-of-memory conditions when compiling. | _4096_ |
+| `rocm_builder_memory` | Megabytes of memory given to the builder.<br/>Reduction may cause out-of-memory conditions. | _4096_ |
 | `niccli_wanted` | If [niccli](https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/Configuration-adapter/nic-cli-configuration-utility.html) is included in the image. | `True` |
 | `niccli_url` | The URL for the _Broadcom_ `niccli` installation archive. | [Link](https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip) |
-| `niccli_sum` | Optional, string. Checksum to use for validating `niccli_url`.<br/>Example: `sha256:abcd1234` | _Undefined_ |
+| `niccli_sum` | Optional, string. Checksum for validating `niccli_url`.<br/>Example: `sha256:abcd1234` | _Undefined_ |
 | `niccli_driver` | If the `bnxt_{en,re}` NIC drivers are included. | `True` |
 | `headless` | If the VNC window for the VM is _hidden_ during build. | `True` |
 
