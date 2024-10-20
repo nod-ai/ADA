@@ -46,7 +46,7 @@ Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is 
 | `packer_binary` | The name _or_ path for the _Packer_ binary.<br/>Installation skipped if overridden. | `/usr/bin/packer` |
 | `rocm_releases` | One or more versions to include _[comma-separated]_.<br/>Newest selects the `amdgpu` driver. | `6.2.2` |
 | `rocm_kernel` | The kernel package with an optional release specifier. | `linux-image-generic-hwe-22.04` |
-| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_.<br/>May also specify releases with `=x.y.z` or globbed. | _linux-headers-generic-hwe-22.04_, _mesa-amdgpu-va-drivers_ |
+| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_.<br/>Comma-separated. May include releases with `=x.y.z` or globbing. | <ul><li>_linux-headers-generic-hwe-22.04_</li><li>_mesa-amdgpu-va-drivers_</li></ul> |
 | `rocm_filename` | The name of the output file/artifact _(tarball)_ | `ubuntu-rocm.tar.gz` |
 | `rocm_installed` | If _ROCm_ multi-release packages are installed.<br/>The `amdgpu` _driver/extras_ are, always. | `False` |
 | `rocm_builder_cpus` | Number of virtual CPUs given to the builder VM. | _4_ |
