@@ -99,10 +99,11 @@
               - "--exclude='*.md'"
               - "--exclude='ansible.cfg'"
               - "--exclude='inventories'"
+              - "--exclude='requirements.yml'"
+              - "--exclude='packer-maas'"
               - "--exclude='NOTICE'"
               - "--exclude='LICENSE'"
               - "--exclude='TODO'"
-              - "--exclude='packer-maas'"
 
         - name: "Ensure Packer plugins are installed"
           ansible.builtin.command: "{{ packer_binary }} init {{ (packer_maas_dir, packer_dist) | path_join }}"
@@ -123,7 +124,7 @@
       ansible.builtin.command:
         cmd: >
           {{ packer_binary }} build
-          {% for _var in (packer_vars + ['headless', 'http_directory', 'http_proxy', 'https_proxy', 'no_proxy', 'ssh_ubuntu_password', 'ubuntu_release']) if vars[_var] is defined %}
+          {% for _var in (packer_vars + ['hidden', 'http_directory', 'http_proxy', 'https_proxy', 'no_proxy', 'ssh_ubuntu_password', 'ubuntu_release']) if vars[_var] is defined %}
           {{ '-var ' + _var + '=' + vars[_var] }}
           {% endfor %}
           -only=qemu.rocm .

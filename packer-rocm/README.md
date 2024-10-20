@@ -1,7 +1,7 @@
 # packer-rocm
 
 [MaaS](https://maas.io/)-enabled [Packer](https://www.packer.io/) images
-with `amdgpu-dkms` and _(optional)_ [ROCm](https://www.amd.com/en/products/software/rocm.html). Builds on the [canonical/packer-maas](https://github.com/canonical/packer-maas/)
+with `amdgpu-dkms` and [ROCm](https://www.amd.com/en/products/software/rocm.html). Builds on the [canonical/packer-maas](https://github.com/canonical/packer-maas/)
 project.
 
 
@@ -35,16 +35,18 @@ ansible-playbook ADA/packer-rocm/playbooks/build.yml \
     -K
 ```
 
-Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host _(repositories and packages)_.
+Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host.
 
-**All** of these variables are _optional_. Please see [I/O](#io) for more.
+Skip host preparation with `-t build`. **All** of these variables are _optional_.
+Please see [I/O](#io) for more.
 
 ### I/O
 
 | Variable | Description | Default |
 |:----------:|-------------|:---------:|
-| `qemu_binary` | The name _or_ path for the _QEMU_ binary. | `qemu-system-x86_64` |
+| `hidden` | If the VNC window for the VM is _hidden_ during build.<br/>Adjustment brings _display_ requirements. | `True` |
 | `packer_binary` | The name _or_ path for the _Packer_ binary.<br/>Installation skipped if overridden. | `/usr/bin/packer` |
+| `qemu_binary` | The name _or_ path for the _QEMU_ binary. | `qemu-system-x86_64` |
 | `rocm_releases` | One or more versions to include _[comma-separated]_.<br/>Newest selects the `amdgpu` driver. | `6.2.2` |
 | `rocm_kernel` | The kernel package with an optional release specifier. | `linux-image-generic-hwe-22.04` |
 | `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_.<br/>Comma-separated. May include releases with `=x.y.z` or globbing. | `linux-headers-generic-hwe-22.04`<br/>`mesa-amdgpu-va-drivers` |
@@ -57,7 +59,6 @@ Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is 
 | `niccli_url` | The URL for the _Broadcom_ `niccli` installation archive. | [Link](https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip) |
 | `niccli_sum` | _Optional_. Checksum to validate `niccli_url` downloads.<br/>Example: `sha256:abcd1234` | _Undefined_ |
 | `niccli_driver` | If the `bnxt_{en,re}` NIC drivers are included. | `True` |
-| `headless` | If the VNC window for the VM is _hidden_ during build. | `True` |
 
 #### MaaS
 
