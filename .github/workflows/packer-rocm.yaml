@@ -18,7 +18,8 @@ jobs:
         with:
           submodules: true
 
-      - uses: actions/setup-python@v5.2.0
+      - name: Setup Python
+        uses: actions/setup-python@v5.2.0
         with:
           python-version: "3.x"
           cache: 'pip'
@@ -31,7 +32,7 @@ jobs:
 
       - name: Install Ansible and Collections
         run: |
-          pip install ansible-core ansible-lint
+          pip install --no-compile ansible-core ansible-lint
           ansible-galaxy collection install -r packer-rocm/requirements.yml
 
       - name: ansible-lint
