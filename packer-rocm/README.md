@@ -4,7 +4,6 @@
 with `amdgpu-dkms` and [ROCm](https://www.amd.com/en/products/software/rocm.html). Builds on the [canonical/packer-maas](https://github.com/canonical/packer-maas/)
 project.
 
-
 ## Building
 
 ### Prerequisites
