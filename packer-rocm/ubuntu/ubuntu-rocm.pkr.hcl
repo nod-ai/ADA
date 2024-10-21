@@ -5,7 +5,7 @@ source "qemu" "rocm" {
   iso_url         = "https://releases.ubuntu.com/${var.ubuntu_release}/ubuntu-${var.ubuntu_release}-live-server-amd64.iso"
   # cloud-init, note 'cd_files' preserves original names
   cd_content      = {
-    "meta-data" = "instance-id: iid-local01\nlocal-hostname: packer-rocm"
+    "meta-data" = jsonencode({"instance-id"="iid-local01","local-hostname"="packer-rocm"})
     "user-data" = file("${path.root}/user-data-rocm")  # workaround for '-rocm' suffix; cloud-init expects 'user-data'
   }
   cd_label        = "cidata"
