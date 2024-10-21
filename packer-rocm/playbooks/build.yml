@@ -122,7 +122,7 @@
               - "--exclude='LICENSE'"
               - "--exclude='TODO'"
 
-        - name: Run 'packer build'
+        - name: "Run 'packer build', create '{{ _creates | basename }}'"
           ansible.builtin.command:
             cmd: >
               {{ packer_binary }} build
@@ -131,8 +131,10 @@
               {% endfor %}
               -only=qemu.rocm .
             chdir: "{{ build_dir }}"
-            creates: "{{ (build_dir, 'ubuntu-rocm.dd.gz') | path_join }}"  # avoid overwriting - require delete
+            creates: "{{ _creates }}"  # avoid overwriting - require delete
           vars:
-            build_dir: "{{ (packer_maas_dir, 'ubuntu') | path_join }}"
+            build_dir: "{{ (packer_maas_dir, packer_dist) | path_join }}"
+            _filename: "{{ rocm_filename | default(packer_dist + '-rocm.tar.gz') }}"
+            _creates: "{{ (build_dir, _filename) | path_join }}"
           environment:
             PACKER_LOG: '1'  # wanted as str
