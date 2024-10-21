@@ -26,6 +26,7 @@ Place any `.deb` packages to include with the image in `ADA/packer-rocm/ubuntu/p
 
 ```shell
 ansible-playbook ADA/packer-rocm/playbooks/build.yml \
+    -e rocm_installed=true \
     -e rocm_releases="6.2.2,6.2.1" \
     -e rocm_kernel="linux-image-generic-hwe-22.04" \
     -e rocm_extras="linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers" \
