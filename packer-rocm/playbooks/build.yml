@@ -90,6 +90,23 @@
             name: "{{ packer_prereqs['common'] + (packer_prereqs[ansible_os_family] | default([])) }}"
             state: present
 
+        - name: "Ensure Packer plugins are installed"
+          ansible.builtin.command: "{{ packer_binary }} init {{ (packer_maas_dir, packer_dist) | path_join }}"
+          changed_when: false
+
+    - name: Build
+      tags: ['build']
+      block:
+        - name: Read 'packer-rocm' HCL variables
+          ansible.builtin.command: >
+            awk '$1 == "variable" {print $2}' {{ (packer_rocm_dir, packer_var_hcl) | path_join }}
+          register: packer_rocm_hcl_awk
+          changed_when: false
+
+        - name: Set Packer variables as Ansible fact
+          ansible.builtin.set_fact:
+            packer_vars: "{{ packer_rocm_hcl_awk.stdout_lines | replace('\"', '') }}"
+
         - name: "Synchronize 'packer-maas' with ADA 'packer-rocm' assets"
           ansible.posix.synchronize:
             src: "{{ packer_rocm_dir }}/"  # trailing '/' on source is significant; copying *contents* of the dir
@@ -105,32 +122,17 @@
               - "--exclude='LICENSE'"
               - "--exclude='TODO'"
 
-        - name: "Ensure Packer plugins are installed"
-          ansible.builtin.command: "{{ packer_binary }} init {{ (packer_maas_dir, packer_dist) | path_join }}"
-          changed_when: false
-
-        - name: Read 'packer-rocm' HCL variables
-          ansible.builtin.command: >
-            awk '$1 == "variable" {print $2}' {{ (packer_rocm_dir, packer_var_hcl) | path_join }}
-          register: packer_rocm_hcl_awk
-          changed_when: false
-
-        - name: Set 'packer-rocm' vars as build fact
-          ansible.builtin.set_fact:
-            packer_vars: "{{ packer_rocm_hcl_awk.stdout_lines | replace('\"', '') }}"
-
-    - name: Build
-      tags: ['build']
-      ansible.builtin.command:
-        cmd: >
-          {{ packer_binary }} build
-          {% for _var in (packer_vars + ['hidden', 'http_directory', 'http_proxy', 'https_proxy', 'no_proxy', 'ssh_ubuntu_password', 'ubuntu_release']) if vars[_var] is defined %}
-          {{ '-var ' + _var + '=' + vars[_var] }}
-          {% endfor %}
-          -only=qemu.rocm .
-        chdir: "{{ build_dir }}"
-        creates: "{{ (build_dir, 'ubuntu-rocm.dd.gz') | path_join }}"  # avoid overwriting - require delete
-      vars:
-        build_dir: "{{ (packer_maas_dir, 'ubuntu') | path_join }}"
-      environment:
-        PACKER_LOG: '1'  # wanted as str
+        - name: Run 'packer build'
+          ansible.builtin.command:
+            cmd: >
+              {{ packer_binary }} build
+              {% for _var in (packer_vars + ['hidden', 'http_directory', 'http_proxy', 'https_proxy', 'no_proxy', 'ubuntu_release']) if vars[_var] is defined %}
+              {{ '-var ' + _var + '=' + vars[_var] }}
+              {% endfor %}
+              -only=qemu.rocm .
+            chdir: "{{ build_dir }}"
+            creates: "{{ (build_dir, 'ubuntu-rocm.dd.gz') | path_join }}"  # avoid overwriting - require delete
+          vars:
+            build_dir: "{{ (packer_maas_dir, 'ubuntu') | path_join }}"
+          environment:
+            PACKER_LOG: '1'  # wanted as str
