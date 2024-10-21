@@ -4,8 +4,8 @@ source "qemu" "rocm" {
   iso_target_path = "packer_cache/ubuntu-${var.ubuntu_release}.iso"
   iso_url         = "https://releases.ubuntu.com/${var.ubuntu_release}/ubuntu-${var.ubuntu_release}-live-server-amd64.iso"
   # cloud-init, note 'cd_files' preserves original names
-  cd_files        = ["meta-data"]
   cd_content      = {
+    "meta-data" = jsonencode({"instance-id"="iid-local01","local-hostname"="packer-rocm"})
     "user-data" = file("${path.root}/user-data-rocm")  # workaround for '-rocm' suffix; cloud-init expects 'user-data'
   }
   cd_label        = "cidata"
@@ -21,12 +21,11 @@ source "qemu" "rocm" {
   efi_boot        = true
   efi_drop_efivars = true  # don't place efivars.fd in output artifact
   format          = "raw"  # qcow2 may not be converted. if written to drives, can't be read back/won't find 'curtin'
-  headless        = var.headless
-  http_directory  = var.http_directory
+  headless        = var.hidden
   shutdown_command       = "sudo -S shutdown -P now"
   ssh_handshake_attempts = 500
   ssh_username           = "ubuntu"
-  ssh_password           = var.ssh_ubuntu_password
+  ssh_password           = "ubuntu"
   ssh_wait_timeout       = "1h"
   ssh_timeout            = "1h"
   # debug/discard
