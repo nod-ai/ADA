@@ -39,9 +39,9 @@ jobs:
         run: |
           ansible-lint --profile production --parseable --nocolor packer-rocm/
 
-      # if Ansible passes, set up Packer/test HCL. 
-      # challenge: many strict references to 'packer-maas' that are out-of-place until playbook-run.
-
+# Not yet validating HCL, challenge:
+# Many out-of-place references to 'packer-maas' until playbook-run; Packer is strict
+#
 #      - name: Setup `packer`
 #        uses: hashicorp/setup-packer@v3.1.0
 #        id: setup
