@@ -37,7 +37,7 @@ ansible-playbook ADA/packer-rocm/playbooks/build.yml \
 
 Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host, skip with `-t build`.
 
-**All** of these variables are _optional_. Please see [I/O](#io) for more. _If changing the kernel:_ include the `extra-modules` and `headers` packages for support.
+**All** of these variables are _optional_. Please see [I/O](#io) for more. _If changing the kernel:_ include `extra-modules` and `headers` for support.
 
 ### I/O
 
