@@ -41,23 +41,23 @@ Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is 
 
 ### I/O
 
-| Variable | Description | Default |
-|:----------:|-------------|:---------:|
-| `hidden` | If the VNC window for the VM is _hidden_ during build.<br/>Adjustment brings _display_ requirements. | `True` |
-| `packer_binary` | The name _or_ path for the _Packer_ binary.<br/>Installation skipped if overridden. | `/usr/bin/packer` |
-| `qemu_binary` | The name _or_ path for the _QEMU_ binary. | `qemu-system-x86_64` |
-| `rocm_releases` | One or more versions to include _[comma-separated]_.<br/>Newest selects the `amdgpu` driver. | `6.2.2` |
-| `rocm_kernel` | The kernel package with an optional release specifier. | `linux-image-generic-hwe-22.04` |
-| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_. Comma-separated list. | _linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers_ |
-| `rocm_filename` | The name of the output file/artifact _(tarball)_ | `ubuntu-rocm.tar.gz` |
-| `rocm_installed` | If _ROCm_ multi-release packages are installed.<br/>The `amdgpu` _driver/extras_ are, always. | `False` |
-| `rocm_builder_cpus` | Number of virtual CPUs given to the builder VM. | _4_ |
-| `rocm_builder_disk` | Space given to the builder; releases compound quickly. | _70G_ |
-| `rocm_builder_memory` | Megabytes of memory given to the builder.<br/>Reduction may cause out-of-memory conditions. | _4096_ |
-| `niccli_wanted` | If [niccli](https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/Configuration-adapter/nic-cli-configuration-utility.html) is included in the image. | `True` |
-| `niccli_url` | The URL for the _Broadcom_ `niccli` installation archive. | [Link](https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA2/bcm5760x_231.2.63.0a.zip) |
-| `niccli_sum` | _Optional_. Checksum to validate `niccli_url` downloads.<br/>Example: `sha256:abcd1234` | _Undefined_ |
-| `niccli_driver` | If the `bnxt_{en,re}` NIC drivers are included. | `True` |
+| Variable | Description |
+|:----------:|-------------|
+| `hidden` | If the VNC window for the VM is _hidden_ during build. Adjustment brings _display_ requirements.<br/>**Default:** `True` |
+| `packer_binary` | The name _or_ path for the _Packer_ binary. Installation skipped when changed.<br/>**Default:** `/usr/bin/packer` |
+| `qemu_binary` | The name _or_ path for the _QEMU_ binary.<br/>**Default:** `qemu-system-x86_64` |
+| `rocm_releases` | One or more versions to include _[comma-separated]_. Newest selects the `amdgpu` driver.<br/>**Default:** `6.2.2` |
+| `rocm_kernel` | The kernel package with an optional release specifier.<br/>**Default:** `linux-image-generic-hwe-22.04` |
+| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_. Comma-separated list.<br/>**Default:** _linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers_ |
+| `rocm_filename` | The name of the output file/artifact _(tarball)_<br/>**Default:** `ubuntu-rocm.tar.gz` |
+| `rocm_installed` | If _ROCm_ multi-release packages are installed. The `amdgpu` driver and extras are, always.<br/>**Default:** `False` |
+| `rocm_builder_cpus` | Number of virtual CPUs given to the builder VM.<br/>**Default:** _4_ |
+| `rocm_builder_disk` | Space given to the builder; releases compound quickly.<br/>**Default:** _70G_ |
+| `rocm_builder_memory` | Megabytes of memory given to the builder. Reduction may cause out-of-memory conditions.<br/>**Default:** _4096_ |
+| `niccli_wanted` | If [niccli](https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/Configuration-adapter/nic-cli-configuration-utility.html) is included in the image.<br/>**Default:** `True` |
+| `niccli_url` | The URL for the _Broadcom_ `niccli` installation archive.<br/>**Default:** `https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA2/bcm5760x_231.2.63.0a.zip` |
+| `niccli_sum` | _Optional_. Checksum to validate `niccli_url` downloads. Example: `sha256:abcd1234`<br/>**Default:** _Undefined_ |
+| `niccli_driver` | If the `bnxt_{en,re}` NIC drivers are included.<br/>**Default:** `True` |
 
 #### MaaS
 
