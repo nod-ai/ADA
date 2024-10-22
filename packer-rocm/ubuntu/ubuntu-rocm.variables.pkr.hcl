@@ -24,7 +24,7 @@ variable "rocm_filename" {
 variable "rocm_kernel" {
   type = string
   default = "linux-image-generic-hwe-22.04"
-  description = "The kernel to include with the image. May include version specifier. Software will be compiled against this; define headers/others in 'rocm_extras'"
+  description = "The kernel to include with the image. May include version specifier. Software will be compiled against this; define headers/extra-modules/others in 'rocm_extras'"
 }
 
 variable "rocm_releases" {
@@ -41,8 +41,8 @@ variable "rocm_installed" {
 
 variable "rocm_extras" {
   type = string
-  default = "mesa-amdgpu-va-drivers,linux-headers-generic-hwe-22.04"
-  description = "Comma-separated string of extra packages to install [after 'amdgpu-dkms' and ROCm releases]. May include release specifiers, '=1.2.3' or globbed"
+  default = "linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers"
+  description = "Comma-separated string of extra packages to install [before 'amdgpu-dkms' and ROCm releases]. For headers, extra-modules, and any other packages. May include release specifiers, '=1.2.3' or globbed."
 }
 
 variable "rocm_builder_cpus" {

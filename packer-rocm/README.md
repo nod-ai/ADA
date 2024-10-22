@@ -28,17 +28,16 @@ ansible-playbook ADA/packer-rocm/playbooks/build.yml \
     -e rocm_installed=true \
     -e rocm_releases="6.2.2,6.2.1" \
     -e rocm_kernel="linux-image-generic-hwe-22.04" \
-    -e rocm_extras="linux-headers-generic-hwe-22.04,mesa-amdgpu-va-drivers" \
+    -e rocm_extras="linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers" \
     -e rocm_builder_cpus=16 \
     -e rocm_builder_disk="70G" \
     -e qemu_binary="qemu-kvm" \
     -K
 ```
 
-Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host.
+Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host, skip with `-t build`.
 
-Skip host preparation with `-t build`. **All** of these variables are _optional_.
-Please see [I/O](#io) for more.
+**All** of these variables are _optional_. Please see [I/O](#io) for more. _If changing the kernel:_ include the `extra-modules` and `headers` packages for support.
 
 ### I/O
 
@@ -49,14 +48,14 @@ Please see [I/O](#io) for more.
 | `qemu_binary` | The name _or_ path for the _QEMU_ binary. | `qemu-system-x86_64` |
 | `rocm_releases` | One or more versions to include _[comma-separated]_.<br/>Newest selects the `amdgpu` driver. | `6.2.2` |
 | `rocm_kernel` | The kernel package with an optional release specifier. | `linux-image-generic-hwe-22.04` |
-| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_.<br/>Comma-separated. May include releases with `=x.y.z` or globbing. | `linux-headers-generic-hwe-22.04`<br/>`mesa-amdgpu-va-drivers` |
+| `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_. Comma-separated list.<br/>The `headers` and `extra-modules` packages support both _DKMS_ and compiled modules, as well. | `linux-headers-generic-hwe-22.04`<br/>`linux-image-extra-virtual-hwe-22.04`<br/>`mesa-amdgpu-va-drivers` |
 | `rocm_filename` | The name of the output file/artifact _(tarball)_ | `ubuntu-rocm.tar.gz` |
 | `rocm_installed` | If _ROCm_ multi-release packages are installed.<br/>The `amdgpu` _driver/extras_ are, always. | `False` |
 | `rocm_builder_cpus` | Number of virtual CPUs given to the builder VM. | _4_ |
 | `rocm_builder_disk` | Space given to the builder; releases compound quickly. | _70G_ |
 | `rocm_builder_memory` | Megabytes of memory given to the builder.<br/>Reduction may cause out-of-memory conditions. | _4096_ |
 | `niccli_wanted` | If [niccli](https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/Configuration-adapter/nic-cli-configuration-utility.html) is included in the image. | `True` |
-| `niccli_url` | The URL for the _Broadcom_ `niccli` installation archive. | [Link](https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA1/bcm5760x_230.2.52.0a.zip) |
+| `niccli_url` | The URL for the _Broadcom_ `niccli` installation archive. | [Link](https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA2/bcm5760x_231.2.63.0a.zip) |
 | `niccli_sum` | _Optional_. Checksum to validate `niccli_url` downloads.<br/>Example: `sha256:abcd1234` | _Undefined_ |
 | `niccli_driver` | If the `bnxt_{en,re}` NIC drivers are included. | `True` |
 
