@@ -129,10 +129,12 @@
         update_cache: true
       when: rocm_extras is defined
 
-    - name: "Install '{{ rocm_amdgpu_pkg | default('amdgpu-dkms') }}'"
+    - name: "Install '{{ _amdgpu_pkgs }}'"
       ansible.builtin.package:
-        name: "{{ rocm_amdgpu_pkg | default('amdgpu-dkms') }}"
+        name: "{{ _amdgpu_pkgs }}"
         state: present
+      vars:
+        _amdgpu_pkgs: "{{ (rocm_amdgpu_pkgs | split(',')) if rocm_amdgpu_pkgs is defined else ['amdgpu-dkms'] }}"
 
     - name: "Install ROCm releases (when 'rocm_installed' is truthy)"
       ansible.builtin.package:

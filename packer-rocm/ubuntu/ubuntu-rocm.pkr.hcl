@@ -98,7 +98,8 @@ build {
       "-e", "rocm_releases=${var.rocm_releases}",  # pass ROCm requests [release + packages]
       "-e", "rocm_extras=${var.rocm_extras}",
       "-e", "rocm_installed=${var.rocm_installed}",
-      "-e", "rocm_repos=${var.rocm_repos}"
+      "-e", "rocm_repos=${var.rocm_repos}",
+      "-e", "rocm_amdgpu_pkgs=${var.rocm_amdgpu_pkgs}"
     ]
   }
 

@@ -21,10 +21,10 @@ variable "rocm_filename" {
   description = "The name of the output file/artifact (tarball)"
 }
 
-variable "rocm_amdgpu_pkg" {
+variable "rocm_amdgpu_pkgs" {
   type = string
   default = "amdgpu-dkms"
-  description = "The name of the 'amdgpu' driver package to install. May specify release"
+  description = "Comma-separated string of 'amdgpu' driver/firmware packages to install. May specify releases."
 }
 
 variable "rocm_kernel" {
