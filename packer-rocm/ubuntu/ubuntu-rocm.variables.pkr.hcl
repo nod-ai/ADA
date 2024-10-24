@@ -21,6 +21,12 @@ variable "rocm_filename" {
   description = "The name of the output file/artifact (tarball)"
 }
 
+variable "rocm_amdgpu_pkgs" {
+  type = string
+  default = "amdgpu-dkms"
+  description = "Comma-separated string of 'amdgpu' driver/firmware packages to install. May specify releases."
+}
+
 variable "rocm_kernel" {
   type = string
   default = "linux-image-generic-hwe-22.04"
@@ -43,6 +49,12 @@ variable "rocm_extras" {
   type = string
   default = "linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers"
   description = "Comma-separated string of extra packages to install [before 'amdgpu-dkms' and ROCm releases]. For headers, extra-modules, and any other packages. May include release specifiers, '=1.2.3' or globbed."
+}
+
+variable "rocm_repos" {
+  type = string
+  default = "true"
+  description = "If the 'rocm' and 'amdgpu' repositories are created by the 'rocm' role. Used to opt out when overrides are in the 'repositories' directory"
 }
 
 variable "rocm_builder_cpus" {

@@ -1,7 +1,7 @@
 ---
 # Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
 # yamllint disable rule:line-length
-- name: "Prepare amdgpu-dkms + ROCm"
+- name: "Prepare amdgpu + ROCm"
   hosts: default
   become: true
   environment:  # may be superfluous for your environment; mapped through Packer HCL with 'ansible_env_vars'
@@ -13,6 +13,7 @@
     rocm_default: '6.2.2'
     rocm_requests: "{{ (rocm_releases | split(',')) if rocm_releases is defined else [rocm_default] }}"
     rocm_gpg_url: 'https://repo.radeon.com/rocm/rocm.gpg.key'
+    rocm_repos: true  # controls if this play manages the repositories or assumed elsewhere
     rocm_reqs:
       common:
         - "autoconf"
@@ -49,8 +50,10 @@
         state: present
         update_cache: true  # passed to the modules for either 'apt' or 'dnf'; supported by either
 
-    - name: RedHat
-      when: ansible_os_family in ['RedHat']
+    - name: RedHat repository tasks
+      when:
+        - ansible_os_family in ['RedHat']
+        - rocm_repos is truthy(convert_bool=True)
       block:
         - name: "Manage 'amdgpu' Yum repositories"
           ansible.builtin.yum_repository:
@@ -90,8 +93,10 @@
                 epel:
                   RedHat: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
 
-    - name: Debian
-      when: ansible_os_family in ['Debian']
+    - name: Debian repository tasks
+      when:
+        - ansible_os_family in ['Debian']
+        - rocm_repos is truthy(convert_bool=True)
       block:
 
         - name: "Fetch signing key for Apt"
@@ -117,17 +122,19 @@
           loop: "{{ rocm_requests }}"
           loop_control: { loop_var: rocm_release }
 
-    - name: "Install any 'extra' packages before 'amdgpu-dkms' or ROCm"
+    - name: "Install any 'extra' packages before 'amdgpu' or ROCm"
       ansible.builtin.package:
         name: "{{ rocm_extras | split(',') }}"
         state: present
         update_cache: true
       when: rocm_extras is defined
 
-    - name: "Install 'amdgpu-dkms'"
+    - name: "Install '{{ _amdgpu_pkgs }}'"
       ansible.builtin.package:
-        name: amdgpu-dkms
+        name: "{{ _amdgpu_pkgs }}"
         state: present
+      vars:
+        _amdgpu_pkgs: "{{ (rocm_amdgpu_pkgs | split(',')) if rocm_amdgpu_pkgs is defined else ['amdgpu-dkms'] }}"
 
     - name: "Install ROCm releases (when 'rocm_installed' is truthy)"
       ansible.builtin.package:

@@ -61,6 +61,7 @@ build {
     ]
   }
 
+
   # remove step/message from 'install-custom-packages' RE: uninstalling existing kernels; DKMS/'cloud-init'
   provisioner "shell" {
     inline_shebang = "/bin/bash"
@@ -82,7 +83,8 @@ build {
     ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
     extra_arguments = [
       "-e", "ansible_python_interpreter=/usr/bin/python3",  # work around Packer/SSH proxy+client limitations
-      "--scp-extra-args", "'-O'"
+      "--scp-extra-args", "'-O'",
+      "-e", "os_repos_src=${path.root}/../repositories"  # *Absolute* path to the 'repositories' directory with '.list' or '.repo' overrides, copied-to/processed-on builder VM
     ]
   }
 
@@ -95,7 +97,9 @@ build {
       "--scp-extra-args", "'-O'",
       "-e", "rocm_releases=${var.rocm_releases}",  # pass ROCm requests [release + packages]
       "-e", "rocm_extras=${var.rocm_extras}",
-      "-e", "rocm_installed=${var.rocm_installed}"
+      "-e", "rocm_installed=${var.rocm_installed}",
+      "-e", "rocm_repos=${var.rocm_repos}",
+      "-e", "rocm_amdgpu_pkgs=${var.rocm_amdgpu_pkgs}"
     ]
   }
 

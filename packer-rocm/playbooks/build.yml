@@ -126,7 +126,7 @@
           ansible.builtin.command:
             cmd: >
               {{ packer_binary }} build
-              {% for _var in (packer_vars + ['hidden', 'http_directory', 'http_proxy', 'https_proxy', 'no_proxy', 'ubuntu_release']) if vars[_var] is defined %}
+              {% for _var in (packer_vars + ['http_directory', 'http_proxy', 'https_proxy', 'no_proxy', 'ubuntu_release']) if vars[_var] is defined %}
               {{ '-var ' + _var + '=' + vars[_var] }}
               {% endfor %}
               -only=qemu.rocm .
