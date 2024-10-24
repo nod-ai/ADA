@@ -1,13 +1,67 @@
 ---
 # vim: ft=yaml.ansible
-- name: OS Preparation  # the Packer 'file' provisioner runs this before other plays
-  gather_facts: false
+- name: OS Preparation  # this play is run before others, uses assets copied by the Packer 'file' and 'ansible' provisioners.
   hosts: default
   become: true
   vars:  # change these with '-e var=...'
     os_rdma_rename: true  # accepts loosely 'true' or 'false' values. ie: 0, 1, yes, no
     os_rdma_rename_mode: 'NAME_KERNEL'
+    os_repos_src: /srv/repos  # *fully qualified* path on the controller where repo overrides can be found; intended for/changed by Packer
   tasks:
+
+    - name: Create temporary directory for repository overrides
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: repos
+      register: mktemp
+
+    - name: Mirror repository overrides (for searching on managed host w/ facts)
+      ansible.posix.synchronize:
+        src: "{{ os_repos_src }}/"  # trailing '/' is significant, ensures the contents of the path are copied
+        dest: "{{ mktemp.path }}"
+        recursive: true
+        archive: true  # retain ownership/modes/etc
+        mode: push
+
+    - name: "Search for repository overrides in '{{ mktemp.path }}'"
+      ansible.builtin.find:
+        paths:
+          - "{{ mktemp.path }}"
+        patterns: "{{ os_repo_patts[ansible_os_family] }}"
+        recurse: true
+        file_type: file
+      register: os_repo_search
+      vars:
+        os_repo_patts:
+          RedHat:
+            - '*.repo'
+          Debian:
+            - '*.list'
+
+    - name: Debug
+      ansible.builtin.debug:
+        var: os_repo_search
+
+    - name: 'Copy [relevant] repository files'
+      become: true
+      ansible.builtin.copy:
+        src: "{{ repofile }}"
+        dest: "{{ os_repo_paths[ansible_os_family] }}"
+        mode: preserve
+        owner: root
+        group: root
+        remote_src: true
+      loop: "{{ os_repo_search.files | map(attribute='path') }}"
+      loop_control: { loop_var: repofile }
+      vars:
+        os_repo_paths:
+          Debian: /etc/apt/sources.list.d/
+          RedHat: /etc/yum.repos.d/
+
+    - name: Clean temporary directory
+      ansible.builtin.file:
+        state: absent
+        path: "{{ mktemp.path }}"
 
     - name: "Manage RDMA device rename mode ({{ os_rdma_rename_mode }})"
       when: os_rdma_rename is truthy(convert_bool=True)

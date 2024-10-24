@@ -13,6 +13,7 @@
     rocm_default: '6.2.2'
     rocm_requests: "{{ (rocm_releases | split(',')) if rocm_releases is defined else [rocm_default] }}"
     rocm_gpg_url: 'https://repo.radeon.com/rocm/rocm.gpg.key'
+    rocm_repos: true  # controls if this play manages the repositories or assumed elsewhere
     rocm_reqs:
       common:
         - "autoconf"
@@ -49,8 +50,10 @@
         state: present
         update_cache: true  # passed to the modules for either 'apt' or 'dnf'; supported by either
 
-    - name: RedHat
-      when: ansible_os_family in ['RedHat']
+    - name: RedHat repository tasks
+      when:
+        - ansible_os_family in ['RedHat']
+        - rocm_repos is truthy(convert_bool=True)
       block:
         - name: "Manage 'amdgpu' Yum repositories"
           ansible.builtin.yum_repository:
@@ -90,8 +93,10 @@
                 epel:
                   RedHat: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
 
-    - name: Debian
-      when: ansible_os_family in ['Debian']
+    - name: Debian repository tasks
+      when:
+        - ansible_os_family in ['Debian']
+        - rocm_repos is truthy(convert_bool=True)
       block:
 
         - name: "Fetch signing key for Apt"

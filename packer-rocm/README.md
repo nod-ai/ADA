@@ -46,6 +46,7 @@ Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is 
 | `hidden` | If the VNC window for the VM is _hidden_ during build. Adjustment brings _display_ requirements.<br/>**Default:** `True` |
 | `packer_binary` | The name _or_ path for the _Packer_ binary. Installation skipped when changed.<br/>**Default:** `/usr/bin/packer` |
 | `qemu_binary` | The name _or_ path for the _QEMU_ binary.<br/>**Default:** `qemu-system-x86_64` |
+| `rocm_repos` | If the _'rocm'_ and _'amdgpu'_ repositories are created by the role. _Opt out_ with overrides in the 'repositories' directory.<br/>**Default:** `True` |
 | `rocm_releases` | One or more versions to include _[comma-separated]_. Newest selects the `amdgpu` driver.<br/>**Default:** `6.2.2` |
 | `rocm_kernel` | The kernel package with an optional release specifier.<br/>**Default:** `linux-image-generic-hwe-22.04` |
 | `rocm_extras` | Packages to install _before_ `amdgpu-dkms` and _ROCm_. Comma-separated list.<br/>**Default:** _linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers_ |

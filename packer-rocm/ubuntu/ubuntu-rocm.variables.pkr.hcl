@@ -45,6 +45,12 @@ variable "rocm_extras" {
   description = "Comma-separated string of extra packages to install [before 'amdgpu-dkms' and ROCm releases]. For headers, extra-modules, and any other packages. May include release specifiers, '=1.2.3' or globbed."
 }
 
+variable "rocm_repos" {
+  type = string
+  default = "true"
+  description = "If the 'rocm' and 'amdgpu' repositories are created by the 'rocm' role. Used to opt out when overrides are in the 'repositories' directory"
+}
+
 variable "rocm_builder_cpus" {
   type = number
   default = 4
