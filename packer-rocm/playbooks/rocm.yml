@@ -1,7 +1,7 @@
 ---
 # Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
 # yamllint disable rule:line-length
-- name: "Prepare amdgpu-dkms + ROCm"
+- name: "Prepare amdgpu + ROCm"
   hosts: default
   become: true
   environment:  # may be superfluous for your environment; mapped through Packer HCL with 'ansible_env_vars'
@@ -122,16 +122,16 @@
           loop: "{{ rocm_requests }}"
           loop_control: { loop_var: rocm_release }
 
-    - name: "Install any 'extra' packages before 'amdgpu-dkms' or ROCm"
+    - name: "Install any 'extra' packages before 'amdgpu' or ROCm"
       ansible.builtin.package:
         name: "{{ rocm_extras | split(',') }}"
         state: present
         update_cache: true
       when: rocm_extras is defined
 
-    - name: "Install 'amdgpu-dkms'"
+    - name: "Install '{{ rocm_amdgpu_pkg | default('amdgpu-dkms') }}'"
       ansible.builtin.package:
-        name: amdgpu-dkms
+        name: "{{ rocm_amdgpu_pkg | default('amdgpu-dkms') }}"
         state: present
 
     - name: "Install ROCm releases (when 'rocm_installed' is truthy)"
