@@ -38,10 +38,6 @@
           Debian:
             - '*.list'
 
-    - name: Debug
-      ansible.builtin.debug:
-        var: os_repo_search
-
     - name: 'Copy [relevant] repository files'
       become: true
       ansible.builtin.copy:
