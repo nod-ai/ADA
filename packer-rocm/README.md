@@ -8,9 +8,9 @@ project.
 
 ### Prerequisites
 
-* `git`
-* `ansible`: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
 * _Linux_ host
+* `ansible`: [pipx](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pipx) or [pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#installing-and-upgrading-ansible-with-pip)
+* `git`
 
 ### Setup
 
@@ -19,14 +19,19 @@ git clone --recurse-submodules https://github.com/nod-ai/ADA.git
 ansible-galaxy collection install -r ADA/packer-rocm/requirements.yml
 ```
 
-Place any `.deb` packages to include with the image in `ADA/packer-rocm/ubuntu/packages/`
+#### Drop-ins
+
+* [./ubuntu/packages/](./ubuntu/packages/): `.deb` packages to include with the image, processed by [curtin](https://curtin.readthedocs.io/en/latest/topics/overview.html).
+* [./repositories/](./repositories/): `.repo` or `.list` package sources for _Apt_, _Yum_, or _DNF_.
+  * File permissions are retained _(eg: credentials)_.
+  * Select packages they offer with `-e rocm_extras=pkg1,pkg2`; accepts releases.
 
 ### Build
 
 ```shell
 ansible-playbook ADA/packer-rocm/playbooks/build.yml \
     -e rocm_installed=true \
-    -e rocm_releases="6.2.2,6.2.1" \
+    -e rocm_releases="6.2.3,6.2.2" \
     -e rocm_kernel="linux-image-generic-hwe-22.04" \
     -e rocm_extras="linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers" \
     -e rocm_builder_cpus=16 \
@@ -37,7 +42,9 @@ ansible-playbook ADA/packer-rocm/playbooks/build.yml \
 
 Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host, skip with `-t build`.
 
-**All** of these variables are _optional_. Please see [I/O](#io) for more. _If changing the kernel:_ include `extra-modules` and `headers` for support.
+When _changing the kernel:_ include `extra-modules`, `headers`, and other packaged build requirements with `-e rocm_extras`. Versions are suggested.
+
+**All** of these variables are _optional_. Please see [I/O](#io) for more.
 
 ### I/O
 
