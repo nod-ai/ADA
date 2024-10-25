@@ -11,16 +11,10 @@ autoinstall:
     # pull venv+secondary Python executables
     - "python3.10-venv"
     - "python3.11-venv"
-    # suggested packages
+    # other suggested non-amdgpu/ROCm packages (for those, see rocm_reqs.common in that playbook)
     - "ffmpeg"
     - "foot-terminfo"
     - "kitty-terminfo"
-    - "libavcodec-dev"
-    - "libavformat-dev"
-    - "libavutil-dev"
-    - "libdrm-amdgpu1"
-    - "libdrm-dev"
-    - "libdrm2"
     - "libelf-dev"
     - "libelf1"
     - "libexpat1"
@@ -37,7 +31,6 @@ autoinstall:
     - "libtinfo-dev"
     - "liburi-perl"
     - "libxml2-dev"
-    - "mesa-common-dev"
     - "pci.ids"
     - "pciutils"
     - "python3-pip"

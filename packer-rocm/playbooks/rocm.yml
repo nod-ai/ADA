@@ -31,24 +31,33 @@
         - "wget"
         - "zip"
       Debian:
+        - "libavcodec-dev"
+        - "libavformat-dev"
+        - "libavutil-dev"
+        - "libdrm-amdgpu1"
+        - "libdrm2"
+        - "libdrm-dev"
+        - "libva2-amdgpu"
+        - "libva-amdgpu-dev"
+        - "libva-amdgpu-drm2"
+        - "libva-amdgpu-wayland2"
+        - "libva-amdgpu-x11-2"
         - "linux-headers-{{ ansible_kernel }}"
         - "linux-modules-extra-{{ ansible_kernel }}"
+        - "mesa-common-dev"
       RedHat:
         - "kernel-headers"
         - "kernel-devel-matched"
         - "kernel-modules-extra"
+        - "libva-amdgpu"
+        - "libva-utils"
+        - "libva-amdgpu-devel"
     rocm_fedora_el: '9.4'  # NOTE: placeholder, for testing: assume equivalence between this RHEL release and 'current Fedora'
   tasks:
 
     - name: "Sort ROCm version requests"
       ansible.builtin.set_fact:
         rocm_release_peak: "{{ (rocm_requests | community.general.version_sort) | last }}"
-
-    - name: "Install Requirements"
-      ansible.builtin.package:
-        name: "{{ rocm_reqs['common'] + rocm_reqs[ansible_os_family] }}"
-        state: present
-        update_cache: true  # passed to the modules for either 'apt' or 'dnf'; supported by either
 
     - name: RedHat repository tasks
       when:
@@ -122,17 +131,25 @@
           loop: "{{ rocm_requests }}"
           loop_control: { loop_var: rocm_release }
 
+    - name: "Install Requirements"
+      ansible.builtin.package:
+        name: "{{ rocm_reqs['common'] + rocm_reqs[ansible_os_family] }}"
+        state: present
+        update_cache: true  # passed to the modules for either 'apt' or 'dnf'; supported by either
+
     - name: "Install any 'extra' packages before 'amdgpu' or ROCm"
       ansible.builtin.package:
         name: "{{ rocm_extras | split(',') }}"
         state: present
         update_cache: true
+        allow_downgrade: true  # one may specify previous releases, downgrading may be required to satisfy the request(s)
       when: rocm_extras is defined
 
     - name: "Install '{{ _amdgpu_pkgs }}'"
       ansible.builtin.package:
         name: "{{ _amdgpu_pkgs }}"
         state: present
+        allow_downgrade: true  # similar to 'extras', users may ask for a previous release of 'amdgpu' (requiring downgrades)
       vars:
         _amdgpu_pkgs: "{{ (rocm_amdgpu_pkgs | split(',')) if rocm_amdgpu_pkgs is defined else ['amdgpu-dkms'] }}"
 
