@@ -65,7 +65,7 @@ variable "rocm_kernel" {
 
 variable "rocm_extras" {
   type = string
-  default = "linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers"
+  default = "linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04"
   description = "Comma-separated string of extra packages to install [before 'amdgpu-dkms' and ROCm releases]. For headers, extra-modules, and any other packages. May include release specifiers, '=1.2.3' or globbed."
 }
 

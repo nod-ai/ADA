@@ -52,15 +52,15 @@ When _changing the kernel:_ include `extra-modules`, `headers`, and other packag
 | `hidden` | If the VNC window for the VM is _hidden_ during build. Adjustment brings _display_ requirements.<br/>**Default:** `True` |
 | `amdgpu_install_rel` | The _release_ portion of the `amdgpu-install` URL.<br/>**Default:** _6.2.3_, [Reference](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/amdgpu-install.html) |
 | `amdgpu_install_build` | The _build_ portion of the URL.<br/>**Default:** _6.2.60203-1_ |
-| `amdgpu_install_pkg` | Optional _URL_ for the `amdgpu-install` _(or 'internal')_ package. Overrides `amdgpu_install_rel` and `amdgpu_install_build`.<br/>**Default:** _templated_ |
-| `amdgpu_install_usecases` | Package groups to request from `amdgpu-install` that match typical workflows and runtimes.<br/>**Default:** _dkms_, suggested: _rocm_ |
+| `amdgpu_install_pkg` | Override for the `amdgpu-install{,-internal}` package. Accepts a file path, not copied.<br/>**Default:** _templated_ from `amdgpu_install_rel` and `amdgpu_install_build` |
+| `amdgpu_install_usecases` | Package groups to request from `amdgpu-install` and the distribution package manager.<br/>**Default:** `dkms,graphics,multimedia` _(kernel driver and Mesa, see `amdgpu-install --list-usecase`)_ |
 | `amdgpu_install_args` | Optional dictionary of arguments to pass to `amdgpu-install`.<br/>**Default:** _Skipped_ |
 | `amdgpu_install_branch` | Optional development branch of the `amdgpu` driver with `amdgpu-install-internal`<br/>**Default:** _Skipped_ |
 | `amdgpu_install_rocm_branch` | Optional development branch for `rocm` software with `amdgpu-install-internal`<br/>**Default:** _Skipped_ |
 | `packer_binary` | The name _or_ path for the _Packer_ binary. Installation skipped when changed.<br/>**Default:** `/usr/bin/packer` |
 | `qemu_binary` | The name _or_ path for the _QEMU_ binary.<br/>**Default:** `qemu-system-x86_64` |
 | `rocm_kernel` | The kernel package with an optional release specifier.<br/>**Default:** `linux-image-generic-hwe-22.04` |
-| `rocm_extras` | Packages to install before `amdgpu-install`-provided _'usecases'_, comma-separated string. Optional releases.<br/>**Default:** _linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers_ |
+| `rocm_extras` | Packages to install before `amdgpu-install`-provided _'usecases'_, comma-separated string. Optional releases.<br/>**Default:** _linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04_ |
 | `rocm_filename` | The name of the output file/artifact _(tarball)_<br/>**Default:** `ubuntu-rocm.tar.gz` |
 | `rocm_builder_cpus` | Number of virtual CPUs given to the builder VM.<br/>**Default:** _4_ |
 | `rocm_builder_disk` | Space given to the builder; releases compound quickly.<br/>**Default:** _70G_ |

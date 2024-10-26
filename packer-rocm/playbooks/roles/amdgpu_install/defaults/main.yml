@@ -10,8 +10,8 @@ amdgpu_install_get: true
 amdgpu_install_rel: 6.2.2
 amdgpu_install_build: 6.2.60202-1
 
-# Packages to install aligning workflows/runtimes; default to the driver
-amdgpu_install_usecases: 'dkms'
+# Packages to install aligning workflows/runtimes; default to the driver and Mesa
+amdgpu_install_usecases: 'dkms,graphics,multimedia'
 
 # Optional dictionary of command-line arguments and values for 'amdgpu-install'
 # amdgpu_install_args:
