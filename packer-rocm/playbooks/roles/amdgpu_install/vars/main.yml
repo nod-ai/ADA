@@ -25,24 +25,9 @@ amdgpu_install_pre:
     - wget
     - zip
   Debian:
-    - libavcodec-dev
-    - libavformat-dev
-    - libavutil-dev
-    - libdrm-amdgpu1
-    - libdrm2
-    - libdrm-dev
-    - libva2-amdgpu
-    - libva-amdgpu-dev
-    - libva-amdgpu-drm2
-    - libva-amdgpu-wayland2
-    - libva-amdgpu-x11-2
     - "linux-headers-{{ ansible_kernel }}"
     - "linux-modules-extra-{{ ansible_kernel }}"
-    - mesa-common-dev
   RedHat:
     - kernel-headers
     - kernel-devel-matched
     - kernel-modules-extra
-    - libva-amdgpu
-    - libva-utils
-    - libva-amdgpu-devel
