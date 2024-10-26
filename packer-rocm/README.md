@@ -53,7 +53,7 @@ When _changing the kernel:_ include `extra-modules`, `headers`, and other packag
 | `hidden` | If the VNC window for the VM is _hidden_ during build. Adjustment brings _display_ requirements.<br/>**Default:** `True` |
 | `amdgpu_install_rel` | The _release_ portion of the `amdgpu-install` URL.<br/>**Default:** _6.2.3_, [Reference](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/amdgpu-install.html) |
 | `amdgpu_install_build` | The _build_ portion of the URL.<br/>**Default:** _6.2.60203-1_ |
-| `amdgpu_install_pkg` | Optional _URL_ for the `amdgpu-install` _(or 'internal')_ package. Overrides _`amdgpu\_install\_rel`_ and `amdgpu\_install\_build`.<br/>**Default:** _templated_ |
+| `amdgpu_install_pkg` | Optional _URL_ for the `amdgpu-install` _(or 'internal')_ package. Overrides `amdgpu_install_rel` and `amdgpu_install_build`.<br/>**Default:** _templated_ |
 | `amdgpu_install_usecases` | Package groups to request from `amdgpu-install` that match typical workflows and runtimes.<br/>**Default:** _dkms_, suggested: _rocm_ |
 | `amdgpu_install_args` | Optional dictionary of arguments to pass to `amdgpu-install`.<br/>**Default:** _Skipped_ |
 | `amdgpu_install_branch` | Optional development branch of the `amdgpu` driver with `amdgpu-install-internal`<br/>**Default:** _Skipped_ |
