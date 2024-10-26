@@ -30,12 +30,11 @@ ansible-galaxy collection install -r ADA/packer-rocm/requirements.yml
 
 ```shell
 ansible-playbook ADA/packer-rocm/playbooks/build.yml \
-    -e rocm_installed=true \
-    -e rocm_releases="6.2.3,6.2.2" \
+    -e amdgpu_install_usecases=rocm \
     -e rocm_kernel="linux-image-generic-hwe-22.04" \
     -e rocm_extras="linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers" \
-    -e rocm_builder_cpus=16 \
-    -e rocm_builder_disk="70G" \
+    -e rocm_builder_cpus=8 \
+    -e rocm_builder_disk="60G" \
     -e qemu_binary="qemu-kvm" \
     -K
 ```
