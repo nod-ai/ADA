@@ -51,7 +51,7 @@
   ansible.builtin.package:
     name: "{{ amdgpu_install_pre['common'] + amdgpu_install_pre[ansible_os_family] }}"
     state: present
-    update_cache: true  # ensure repo(s) provided by 'amdgpu-install{,-internal' are cached
+    update_cache: true  # ensure repo(s) provided by 'amdgpu-install{,-internal}' are cached
 
 - name: Gather package facts
   ansible.builtin.package_facts:
