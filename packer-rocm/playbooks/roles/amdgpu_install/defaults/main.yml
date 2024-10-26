@@ -24,5 +24,5 @@ amdgpu_install_pkg: templated
 
 # 'internal' deployments may use these (and 'amdgpu-repo') to change repositories/builds
 # Requires override for 'amdgpu_install_pkg'; ignored when 'amdgpu-install-internal' not installed. Provides 'amdgpu-repo'.
-amdgpu_install_rocm_branch: compute-rocm-dkms-no-npi-hipclang/14986
-amdgpu_install_branch: '2065452'
+# amdgpu_install_rocm_branch: compute-rocm-dkms-no-npi-hipclang/14986
+# amdgpu_install_branch: '2065452'
