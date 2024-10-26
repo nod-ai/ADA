@@ -53,7 +53,7 @@ When _changing the kernel:_ include `extra-modules`, `headers`, and other packag
 | `amdgpu_install_rel` | The _release_ portion of the `amdgpu-install` URL.<br/>**Default:** _6.2.3_, [Reference](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/amdgpu-install.html) |
 | `amdgpu_install_build` | The _build_ portion of the URL.<br/>**Default:** _6.2.60203-1_ |
 | `amdgpu_install_pkg` | Override for the `amdgpu-install{,-internal}` package. Accepts a file path, not copied.<br/>**Default:** _templated_ from `amdgpu_install_rel` and `amdgpu_install_build` |
-| `amdgpu_install_usecases` | Package groups to request from `amdgpu-install` and the distribution package manager.<br/>**Default:** `dkms,graphics,multimedia` _(kernel driver and Mesa, see `amdgpu-install --list-usecase`)_ |
+| `amdgpu_install_usecases` | Package groups to request from `amdgpu-install` and the distribution package manager.<br/>**Default:** `dkms,graphics,multimedia` _(kernel driver and Mesa)_<br/>**Reference:** see `amdgpu-install --list-usecase` |
 | `amdgpu_install_args` | Optional dictionary of arguments to pass to `amdgpu-install`.<br/>**Default:** _Skipped_ |
 | `amdgpu_install_branch` | Optional development branch of the `amdgpu` driver with `amdgpu-install-internal`<br/>**Default:** _Skipped_ |
 | `amdgpu_install_rocm_branch` | Optional development branch for `rocm` software with `amdgpu-install-internal`<br/>**Default:** _Skipped_ |
