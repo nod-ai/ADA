@@ -1,0 +1,90 @@
+---
+# tasks file for amdgpu_install
+#
+# Ansible implementation of this document:
+#   https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/amdgpu-install.html
+
+- name: "Set 'amdgpu_install_pkg' from template patterns"
+  ansible.builtin.set_fact:
+    amdgpu_install_pkg: "{{ amdgpu_install_pkg_patts[ansible_distribution] }}"
+  when:
+  # role sets literal str, jinja templates to which this refers can be found in 'vars'; may override with URL/file path (not copied)
+    - amdgpu_install_pkg is match('templated')
+
+- name: RedHat preparation tasks
+  tags: ['prep']
+  become: true
+  when:
+    - ansible_os_family in ['RedHat']
+    - amdgpu_install_get is truthy(convert_bool=True)
+  block:
+    - name: "Ensure CodeReady Builder+EPEL for RHEL/derivatives [that aren't Fedora]"
+      when: ansible_distribution not in ['Fedora']
+      block:
+        - name: "RedHat : Manage CRB"
+          community.general.dnf_config_manager:
+            name: crb
+            state: enabled
+
+        - name: "RedHat : Ensure EPEL"
+          ansible.builtin.package:
+            name: "{{ epel[ansible_distribution] | default('epel-release') }}"  # CentOS/etc provide 'epel-release'; RedHat and others may require download
+            state: present
+          vars:
+            epel:
+              RedHat: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
+
+- name: Install 'amdgpu-install'
+  become: true
+  when: amdgpu_install_get is truthy(convert_bool=True)
+  ansible.builtin.package:
+    # URL/file path handling is inconsistent w/ backing package managers
+    deb: "{{ amdgpu_install_pkg if ansible_os_family in ['Debian'] else omit }}"
+    name: "{{ amdgpu_install_pkg if ansible_os_family not in ['Debian'] else omit }}"
+    # ensure dependencies may resolve on truly-new hosts
+    update_cache: true
+    # opt out of check/enforcement; this package manages the keyring for subsequent work
+    disable_gpg_check: "{{ true if ansible_os_family in ['RedHat'] else omit }}"
+
+- name: "Install Requirements"
+  become: true
+  ansible.builtin.package:
+    name: "{{ amdgpu_install_pre['common'] + amdgpu_install_pre[ansible_os_family] }}"
+    state: present
+    update_cache: true  # ensure repo(s) provided by installer script are cached; may provide
+
+- name: Gather package facts
+  ansible.builtin.package_facts:
+
+- name: "Internal : 'amdgpu-repo' (when 'internal' and builds provided)"
+  become: true
+  changed_when: true  # satisfy linting, assume changed when run
+  ansible.builtin.shell: >
+    amdgpu-repo {% for install_spec, repo_spec in amdgpu_install_repos.items() %}
+    --{{ install_spec }}={{ repo_spec }}
+    {% endfor %}
+  when:
+    - amdgpu_install_repos is defined
+    - (amdgpu_install_repos | length) > 0
+    - '"amdgpu-install-internal" in ansible_facts.packages'  # generally does not apply to GA releases, internal only
+
+- name: "Install 'extra' packages"
+  become: true
+  when: rocm_extras is defined
+  ansible.builtin.package:
+    name: "{{ rocm_extras | split(',') }}"  # generate/process list from comma-separated string passed from Ansible -> Packer -> Ansible
+    state: present
+    update_cache: true
+    allow_downgrade: true  # may have specified past releases, may be required to satisfy the request(s)
+
+- name: "Usecase(s): {{ amdgpu_install_usecases }}"
+  become: true
+  register: amdgpu_install_run
+  ansible.builtin.shell:
+    cmd: >
+      amdgpu-install -y --usecase={{ amdgpu_install_usecases }}
+      {% for installarg, argval in (amdgpu_install_args | default({})).items() %}
+      --{{ installarg }}{% if argval %}={{ argval }}{% endif %}
+      {% endfor %}
+  changed_when: > # may wrap Apt/DNF/Yum - try to report changes accurately based on strings in output
+    amdgpu_install_run.stdout_lines | select('match', '(?:(.*will be (?:installed|REMOVED).*)|Installed:|Removed:)')

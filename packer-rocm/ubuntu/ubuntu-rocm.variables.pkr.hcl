@@ -4,6 +4,42 @@ variable "hidden" {
   description = "If the VNC display for the Virtual Machine is hidden while building the image. Adds display requirements"
 }
 
+variable "amdgpu_install_rel" {
+  type = string
+  default = "6.2.3"
+  description = "The _release_ portion of the `amdgpu-install` URL. May be overridden by 'amdgpu_install_pkg'"
+}
+
+variable "amdgpu_install_build" {
+  type = string
+  default = "6.2.60203-1"
+  description = "The _build_ portion of the `amdgpu-install` URL. May be overridden by 'amdgpu_install_pkg'"
+}
+
+variable "amdgpu_install_pkg" {
+  type = string
+  default = "templated"
+  description = "Optional URL for the `amdgpu-install` package. Typically determined by Ansible Facts; declaration replaces `amdgpu_install_rel` and `amdgpu_install_build`."
+}
+
+variable "amdgpu_install_usecases" {
+  type = string
+  default = "dkms"
+  description = "Package groups to request from `amdgpu-install` that match typical workflows and runtimes."
+}
+
+variable "amdgpu_install_branch" {
+  type = string
+  default = "2065452"  # passing from Ansible -> Packer -> Ansible may complicate type; simplify w/ str
+  description = "Placeholder. Optional development branch for the `amdgpu` driver with `amdgpu-install-internal` (through `amdgpu_install_pkg`)"
+}
+
+variable "amdgpu_install_rocm_branch" {
+  type = string
+  default = "compute-rocm-dkms-no-npi-hipclang/14986"
+  description = "Placeholder. Optional development branch for `rocm` software with `amdgpu-install-internal` (through `amdgpu_install_pkg`)"
+}
+
 variable "qemu_binary" {
   type = string
   default = "qemu-system-x86_64"
@@ -21,40 +57,16 @@ variable "rocm_filename" {
   description = "The name of the output file/artifact (tarball)"
 }
 
-variable "rocm_amdgpu_pkgs" {
-  type = string
-  default = "amdgpu-dkms"
-  description = "Comma-separated string of 'amdgpu' driver/firmware packages to install. May specify releases."
-}
-
 variable "rocm_kernel" {
   type = string
   default = "linux-image-generic-hwe-22.04"
   description = "The kernel to include with the image. May include version specifier. Software will be compiled against this; define headers/extra-modules/others in 'rocm_extras'"
 }
 
-variable "rocm_releases" {
-  type = string
-  default = "6.2.2"
-  description = "Comma-separated string of ROCm release(s) for the image; latest is selected for the 'amdgpu' driver"
-}
-
-variable "rocm_installed" {
-  type = string
-  default = "false"
-  description = "If ROCm packages should be installed after 'amdgpu-dkms'; accepts 'truthy' or 'falsy' values (1/0/y/n/'inapplicable')"
-}
-
 variable "rocm_extras" {
   type = string
   default = "linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04,mesa-amdgpu-va-drivers"
   description = "Comma-separated string of extra packages to install [before 'amdgpu-dkms' and ROCm releases]. For headers, extra-modules, and any other packages. May include release specifiers, '=1.2.3' or globbed."
-}
-
-variable "rocm_repos" {
-  type = string
-  default = "true"
-  description = "If the 'rocm' and 'amdgpu' repositories are created by the 'rocm' role. Used to opt out when overrides are in the 'repositories' directory"
 }
 
 variable "rocm_builder_cpus" {

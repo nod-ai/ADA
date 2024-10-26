@@ -1,0 +1,40 @@
+---
+# defaults file for amdgpu_install
+#
+# yamllint disable rule:line-length
+#
+# 'amdgpu-install' URL/path override: amdgpu_install_pkg
+# supercedes the '_rel' and '_build' variables below
+#
+# assume 'amdgpu-install' is not already available or present, will need to download or install from an already-copied package
+amdgpu_install_get: true
+
+# construct the download URL for 'amdgpu-install' with ROCm release/build number
+amdgpu_install_rel: 6.2.2
+amdgpu_install_build: 6.2.60202-1
+
+# packages to install aligning workflows/runtimes; default to the driver
+amdgpu_install_usecases: 'dkms'
+
+# setting this to a link overrides both 'amdgpu_install_rel' and 'amdgpu_install_build' for the installer source
+amdgpu_install_pkg: templated
+# may also be the path to an already-downloaded copy
+
+# 'internal' deployments may use these (and 'amdgpu-repo') to change repositories/builds; skipped when 'amdgpu-install-internal' not installed/provided
+# these, too, supercede the '_rel' and '_build' variables
+amdgpu_install_rocm_branch: compute-rocm-dkms-no-npi-hipclang/14986
+amdgpu_install_branch: '2065452'
+
+# amdgpu_install_args:
+#  accept-eula:
+#  vulkan: pro
+
+# significant to show to Packer for Fremont override:
+#   amdgpu_install_rocm_branch
+#   amdgpu_install_branch
+#   amdgpu_install_pkg
+# for everyone:
+#   amdgpu_install_rel
+#   amdgpu_install_build
+#   (these imply or set the amdgpu/rocm release when given the usecase)
+#   amdgpu_install_usecases

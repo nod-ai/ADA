@@ -89,17 +89,19 @@ build {
   }
 
   provisioner "ansible" {
-    playbook_file = "${path.root}/../playbooks/rocm.yml"
+    playbook_file = "${path.root}/../playbooks/amdgpu_install.yml"
     user          = "ubuntu"
     ansible_env_vars  = ["http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}"]
     extra_arguments = [
       "-e", "ansible_python_interpreter=/usr/bin/python3",
       "--scp-extra-args", "'-O'",
-      "-e", "rocm_releases=${var.rocm_releases}",  # pass ROCm requests [release + packages]
-      "-e", "rocm_extras=${var.rocm_extras}",
-      "-e", "rocm_installed=${var.rocm_installed}",
-      "-e", "rocm_repos=${var.rocm_repos}",
-      "-e", "rocm_amdgpu_pkgs=${var.rocm_amdgpu_pkgs}"
+      "-e", "rocm_extras=${var.rocm_extras}",  # pass amdgpu-install requests [release/packages/etc]
+      "-e", "amdgpu_install_rel=${var.amdgpu_install_rel}",
+      "-e", "amdgpu_install_build=${var.amdgpu_install_build}",
+      "-e", "amdgpu_install_pkg=${var.amdgpu_install_pkg}",
+      "-e", "amdgpu_install_usecases=${var.amdgpu_install_usecases}",
+      "-e", "amdgpu_install_branch=${var.amdgpu_install_branch}",
+      "-e", "amdgpu_install_rocm_branch=${var.amdgpu_install_rocm_branch}",
     ]
   }
 
