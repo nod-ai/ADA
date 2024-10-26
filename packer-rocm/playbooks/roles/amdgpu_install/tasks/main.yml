@@ -56,7 +56,7 @@
 - name: Gather package facts
   ansible.builtin.package_facts:
 
-- name: "Internal : 'amdgpu-repo' (when 'internal' and builds provided)"
+- name: "Internal : 'amdgpu-repo' (when 'internal' and build(s) provided)"
   become: true
   changed_when: true  # satisfy linting, assume changed when run
   ansible.builtin.shell: >
@@ -64,6 +64,7 @@
     {% if amdgpu_install_rocm_branch is defined %}--rocm-build={{ amdgpu_install_rocm_branch }}{% endif %}
     {% if amdgpu_install_branch is defined %}--amdgpu-build={{ amdgpu_install_branch }}{% endif %}
   when:
+    - (amdgpu_install_rocm_branch is defined) or (amdgpu_install_rocm_branch is defined)
     - '"amdgpu-install-internal" in ansible_facts.packages'  # generally does not apply to GA releases, internal only
 
 - name: "Install 'extra' packages"
