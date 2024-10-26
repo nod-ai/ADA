@@ -6,13 +6,13 @@ variable "hidden" {
 
 variable "amdgpu_install_rel" {
   type = string
-  default = "6.2.3"
+  default = "6.2.2"
   description = "The _release_ portion of the `amdgpu-install` URL. May be overridden by 'amdgpu_install_pkg'"
 }
 
 variable "amdgpu_install_build" {
   type = string
-  default = "6.2.60203-1"
+  default = "6.2.60202-1"
   description = "The _build_ portion of the `amdgpu-install` URL. May be overridden by 'amdgpu_install_pkg'"
 }
 

@@ -6,8 +6,8 @@ Ansible role for [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-
 
 |  Variable  | Description |
 |:----------:|-------------|
-| `amdgpu_install_rel` | The _release_ portion of the `amdgpu-install` URL.<br/>**Default:** _6.2.3_, [Reference](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/amdgpu-install.html) |
-| `amdgpu_install_build` | The _build_ portion of the URL.<br/>**Default:** _6.2.60203-1_ |
+| `amdgpu_install_rel` | The _release_ portion of the `amdgpu-install` URL.<br/>**Default:** _6.2.2_, [Reference](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/amdgpu-install.html) |
+| `amdgpu_install_build` | The _build_ portion of the URL.<br/>**Default:** _6.2.60202-1_ |
 | `amdgpu_install_pkg` | Optional _URL_ for the `amdgpu-install` package. Replaces `amdgpu_install_rel` and `amdgpu_install_build`.<br/>**Default:** _templated_ |
 | `amdgpu_install_get` | If preparations for `amdgpu-install` are made/is installed.<br/>**Default:** _True_ |
 | `amdgpu_install_usecases` | Package groups to request from `amdgpu-install` that match typical workflows and runtimes.<br/>**Default:** _dkms_, suggested: _rocm_ |
