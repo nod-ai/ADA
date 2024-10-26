@@ -51,7 +51,7 @@
   ansible.builtin.package:
     name: "{{ amdgpu_install_pre['common'] + amdgpu_install_pre[ansible_os_family] }}"
     state: present
-    update_cache: true  # ensure repo(s) provided by installer script are cached; may provide
+    update_cache: true  # ensure repo(s) provided by 'amdgpu-install{,-internal' are cached
 
 - name: Gather package facts
   ansible.builtin.package_facts:
@@ -60,12 +60,10 @@
   become: true
   changed_when: true  # satisfy linting, assume changed when run
   ansible.builtin.shell: >
-    amdgpu-repo {% for install_spec, repo_spec in amdgpu_install_repos.items() %}
-    --{{ install_spec }}={{ repo_spec }}
-    {% endfor %}
+    amdgpu-repo
+    {% if amdgpu_install_rocm_branch is defined %}--rocm-build={{ amdgpu_install_rocm_branch }}{% endif %}
+    {% if amdgpu_install_branch is defined %}--amdgpu-build={{ amdgpu_install_branch }}{% endif %}
   when:
-    - amdgpu_install_repos is defined
-    - (amdgpu_install_repos | length) > 0
     - '"amdgpu-install-internal" in ansible_facts.packages'  # generally does not apply to GA releases, internal only
 
 - name: "Install 'extra' packages"
