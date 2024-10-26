@@ -24,7 +24,7 @@ variable "amdgpu_install_pkg" {
 
 variable "amdgpu_install_usecases" {
   type = string
-  default = "dkms"
+  default = "dkms,graphics,multimedia"
   description = "Package groups to request from `amdgpu-install` that match typical workflows and runtimes."
 }
 
