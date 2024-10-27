@@ -113,6 +113,7 @@ variable "niccli_driver" {
 
 packer {
   required_plugins {
+    # the qemu plugin/builder is also required, but it's effectively globbed from other files. Ansible is unique among the set
     ansible = {
       version = "~> 1"
       source = "github.com/hashicorp/ansible"

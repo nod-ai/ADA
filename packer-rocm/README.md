@@ -89,3 +89,13 @@ These _environment variables_ are respected:
 * `http_proxy`
 * `https_proxy`
 * `no_proxy`
+
+#### Troubleshooting
+
+##### GRUB
+
+Builds using _'software emulation'_ may find more time required in the `wait` strings with `boot_command`, [example](./ubuntu/ubuntu-rocm.pkr.hcl)
+
+##### QEMU
+
+If `packer build` says the _QEMU_ builder is missing, ensure the _Git_ submodules are cloned. The _Ansible_ playbook should have run `packer init`, installing the plugins `packer-maas` _and_ this project require... assuming a complete set of _HCL_ files.
