@@ -66,7 +66,7 @@ Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is 
 | `rocm_extras` | Packages installed before `amdgpu-install` _'usecases'_, comma-separated string with optional releases.<br/>**Default:** _linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04_ |
 | `niccli_wanted` | If the _Broadcom_ [niccli](https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/Configuration-adapter/nic-cli-configuration-utility.html) software is included in the image.<br/>**Default:** `True` |
 | `niccli_url` | The URL for the `niccli` installation archive.<br/>**Default:** `https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA2/bcm5760x_231.2.63.0a.zip` |
-| `niccli_sum` | _Optional_ checksum for validating `niccli_url` download.<br/>**Default:** _Undefined_, example: `sha256:abcd1234` |
+| `niccli_sum` | _Optional_ checksum for the `niccli_url` download.<br/>**Default:** _Undefined_, example: `sha256:abcd1234` |
 | `niccli_driver` | If the `bnxt_en` and `bnxt_re` drivers are included, assumes `niccli_wanted`.<br/>**Default:** `True` |
 
 #### MaaS
