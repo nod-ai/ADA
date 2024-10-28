@@ -51,6 +51,10 @@ Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is 
 | `hidden` | Controls _VNC_ visibility during build. Brings _display_ requirements.<br/>**Default:** `True`. See also: `ForwardX11=yes` _(with SSH)_ or VNC _(to QEMU)_ |
 | `packer_binary` | The name _or_ path for the _Packer_ binary. Installation skipped when changed.<br/>**Default:** `/usr/bin/packer` |
 | `qemu_binary` | The name _or_ path for the _QEMU_ binary.<br/>**Default:** `qemu-system-x86_64` |
+| `filename` | The name of the output file/artifact _(tarball)_<br/>**Default:** `ubuntu-rocm.tar.gz` |
+| `builder_cpus` | Number of virtual CPUs given to the builder virtual machine.<br/>**Default:** _4_ |
+| `builder_disk` | Size of the `raw` disk image behind the virtual machine.<br/>**Default:** _60G_ |
+| `builder_memory` | Megabytes of memory given to the virtual machine. Reduction may cause out-of-memory conditions.<br/>**Default:** _4096_ |
 | `amdgpu_install_rel` | The _release_ portion of the `amdgpu-install` URL.<br/>**Default:** _6.2.2_, [Reference](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/amdgpu-install.html) |
 | `amdgpu_install_build` | The _build_ portion of the URL.<br/>**Default:** _6.2.60202-1_ |
 | `amdgpu_install_pkg` | Override for the `amdgpu-install` package. URL or file path _(not copied)_.<br/>**Default:** _templated_ from `amdgpu_install_rel` and `amdgpu_install_build` |
@@ -60,10 +64,6 @@ Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is 
 | `amdgpu_install_rocm_branch` | Optional development branch for `rocm` software with `amdgpu-install-internal`<br/>**Default:** _Skipped_ |
 | `rocm_kernel` | The kernel package with an optional release specifier.<br/>**Default:** `linux-image-generic-hwe-22.04` |
 | `rocm_extras` | Packages installed before `amdgpu-install` _'usecases'_, comma-separated string with optional releases.<br/>**Default:** _linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04_ |
-| `builder_cpus` | Number of virtual CPUs given to the builder virtual machine.<br/>**Default:** _4_ |
-| `builder_disk` | Size of the `raw` disk image behind the virtual machine.<br/>**Default:** _60G_ |
-| `builder_memory` | Megabytes of memory given to the virtual machine. Reduction may cause out-of-memory conditions.<br/>**Default:** _4096_ |
-| `filename` | The name of the output file/artifact _(tarball)_<br/>**Default:** `ubuntu-rocm.tar.gz` |
 | `niccli_wanted` | If [niccli](https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/Configuration-adapter/nic-cli-configuration-utility.html) is included in the image.<br/>**Default:** `True` |
 | `niccli_url` | The URL for the _Broadcom_ `niccli` installation archive.<br/>**Default:** `https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA2/bcm5760x_231.2.63.0a.zip` |
 | `niccli_sum` | _Optional_. Checksum to validate `niccli_url` downloads. Example: `sha256:abcd1234`<br/>**Default:** _Undefined_ |
