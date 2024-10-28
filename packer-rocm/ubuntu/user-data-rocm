@@ -8,10 +8,9 @@ autoinstall:
   packages:
     # support potential use of the ansible-local provisioner
     - "ansible"
-    # pull venv+secondary Python executables
+    # suggested non-amdgpu/ROCm packages (for those, see 'amdgpu_install_pre' in the Ansible role)
     - "python3.10-venv"
     - "python3.11-venv"
-    # other suggested non-amdgpu/ROCm packages (for those, see rocm_reqs.common in that playbook)
     - "ffmpeg"
     - "foot-terminfo"
     - "kitty-terminfo"

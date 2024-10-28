@@ -138,6 +138,6 @@
             chdir: "{{ (workdir, packer_dist) | path_join }}"
             creates: "{{ _creates }}"  # avoid replacing the file; require deletion
           vars:
-            _creates: "{{ (workdir, packer_dist, (rocm_filename | default(packer_dist + '-rocm.tar.gz'))) | path_join }}"
+            _creates: "{{ (workdir, packer_dist, (filename | default(packer_dist + '-rocm.tar.gz'))) | path_join }}"
           environment:
             PACKER_LOG: '1'  # wanted as str

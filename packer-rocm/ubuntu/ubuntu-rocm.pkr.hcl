@@ -10,9 +10,9 @@ source "qemu" "rocm" {
   }
   cd_label        = "cidata"
   # system resources
-  cpus            = var.rocm_builder_cpus
-  disk_size       = "${var.rocm_builder_disk}"  # Packer seems to have trouble with strings that begin with numbers; explicitly cast
-  memory          = var.rocm_builder_memory
+  cpus            = var.builder_cpus
+  disk_size       = "${var.builder_disk}"  # Packer seems to have trouble with strings that begin with numbers; explicitly cast
+  memory          = var.builder_memory
   # image/build prefs
   qemu_binary     = var.qemu_binary
   # accelerator     = "none"  # Packer will try 'kvm', falling back to 'tcg' if necessary
@@ -158,7 +158,7 @@ build {
   post-processor "shell-local" {
     inline = [
       "SOURCE=${source.name}",
-      "OUTPUT=${var.rocm_filename}",
+      "OUTPUT=${var.filename}",
       "IMG_FMT=raw",
       "ROOT_PARTITION=2",
       # expedite compression: use an exported function to test for 'pigz' and remap 'gzip' to it, if found

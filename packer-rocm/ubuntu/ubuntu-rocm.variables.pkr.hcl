@@ -51,7 +51,7 @@ variable "ubuntu_release" {
   default = "22.04.5"
 }
 
-variable "rocm_filename" {
+variable "filename" {
   type        = string
   default     = "ubuntu-rocm.tar.gz"
   description = "The name of the output file/artifact (tarball)"
@@ -69,19 +69,19 @@ variable "rocm_extras" {
   description = "Comma-separated string of extra packages to install [before 'amdgpu-dkms' and ROCm releases]. For headers, extra-modules, and any other packages. May include release specifiers, '=1.2.3' or globbed."
 }
 
-variable "rocm_builder_cpus" {
+variable "builder_cpus" {
   type = number
   default = 4
   description = "Number of CPU threads given to the builder Virtual Machine. More may help compilation speed"
 }
 
-variable "rocm_builder_memory" {
+variable "builder_memory" {
   type = number
   default = 4096
   description = "RAM given to the builder VM, measured in MB. Out-of-memory conditions were found with 2G during DKMS builds"
 }
 
-variable "rocm_builder_disk" {
+variable "builder_disk" {
   type = string
   default = "70G"
   description = "amdgpu and ROCm releases demand considerable space. Layout in 'user-data-rocm' will claim all of this"
