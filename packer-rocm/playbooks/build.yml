@@ -119,7 +119,7 @@
 
         - name: Read 'packer-rocm' HCL variables
           ansible.builtin.command: >
-            awk '$1 == "variable" {print $2}' {{ (workdir, packer_dist, packer_dist + '-rocm.variables.pkr.hcl') | path_join }}
+            awk '$1 == "variable" {print $2}' {{ (workdir, packer_dist, (packer_dist + '-rocm.variables.pkr.hcl')) | path_join }}
           register: packer_rocm_hcl_awk
           changed_when: false
 

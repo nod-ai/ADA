@@ -37,7 +37,7 @@ ansible-playbook ADA/packer-rocm/playbooks/build.yml \
     -K
 ```
 
-The build host(s) may be changed with an _inventory file_ using `-i path/to/file`. _Ansible_ will expect the group `qemu`. See [upstream documentation](https://docs.ansible.com/ansible/latest/inventory_guide/index.html) for more information.
+Those building with [ansible-pull](https://docs.ansible.com/ansible/latest/cli/ansible-pull.html) may want to replace the inventory file usage with `-i 'localhost,'`. [See upstream](https://docs.ansible.com/ansible/latest/inventory_guide/index.html) for more information.
 
 Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host, skip with `-t build`.
 
@@ -49,6 +49,8 @@ Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is 
 |:----------:|-------------|
 | `workdir` | _Fully qualified_ path for storing the repository, ISO, and Virtual Machine on the build host.<br/>**Default:** `/var/tmp/packer-rocm` |
 | `hidden` | Controls _VNC_ visibility during build. Brings _display_ requirements.<br/>**Default:** `True`. See also: `ForwardX11=yes` _(with SSH)_ or VNC _(to QEMU)_ |
+| `packer_binary` | The name _or_ path for the _Packer_ binary. Installation skipped when changed.<br/>**Default:** `/usr/bin/packer` |
+| `qemu_binary` | The name _or_ path for the _QEMU_ binary.<br/>**Default:** `qemu-system-x86_64` |
 | `amdgpu_install_rel` | The _release_ portion of the `amdgpu-install` URL.<br/>**Default:** _6.2.2_, [Reference](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/amdgpu-install.html) |
 | `amdgpu_install_build` | The _build_ portion of the URL.<br/>**Default:** _6.2.60202-1_ |
 | `amdgpu_install_pkg` | Override for the `amdgpu-install` package. URL or file path _(not copied)_.<br/>**Default:** _templated_ from `amdgpu_install_rel` and `amdgpu_install_build` |
@@ -56,8 +58,6 @@ Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is 
 | `amdgpu_install_args` | Optional dictionary of arguments to pass to `amdgpu-install`.<br/>**Default:** _Skipped_ |
 | `amdgpu_install_branch` | Optional development branch of the `amdgpu` driver with `amdgpu-install-internal`<br/>**Default:** _Skipped_ |
 | `amdgpu_install_rocm_branch` | Optional development branch for `rocm` software with `amdgpu-install-internal`<br/>**Default:** _Skipped_ |
-| `packer_binary` | The name _or_ path for the _Packer_ binary. Installation skipped when changed.<br/>**Default:** `/usr/bin/packer` |
-| `qemu_binary` | The name _or_ path for the _QEMU_ binary.<br/>**Default:** `qemu-system-x86_64` |
 | `rocm_kernel` | The kernel package with an optional release specifier.<br/>**Default:** `linux-image-generic-hwe-22.04` |
 | `rocm_extras` | Packages installed before `amdgpu-install` _'usecases'_, comma-separated string with optional releases.<br/>**Default:** _linux-headers-generic-hwe-22.04,linux-image-extra-virtual-hwe-22.04_ |
 | `rocm_filename` | The name of the output file/artifact _(tarball)_<br/>**Default:** `ubuntu-rocm.tar.gz` |
@@ -81,8 +81,6 @@ maas admin boot-resources create \
      filetype='tgz' \
      content@=ubuntu-rocm.tar.gz
 ```
-
-The artifact will be in `ADA/packer-rocm/packer-maas/ubuntu/`, named `ubuntu-rocm.tar.gz`.
 
 #### Proxy
 
