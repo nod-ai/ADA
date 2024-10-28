@@ -1,0 +1,33 @@
+---
+# vars file for amdgpu_install
+#
+# yamllint disable rule:line-length
+amdgpu_install_pkg_patts:  # indexed by 'ansible_distribution' fact
+  Ubuntu: "https://repo.radeon.com/amdgpu-install/{{ amdgpu_install_rel }}/ubuntu/{{ ansible_distribution_release }}/amdgpu-install_{{ amdgpu_install_build }}_all.deb"
+  RedHat: "https://repo.radeon.com/amdgpu-install/{{ amdgpu_install_rel }}/rhel/{{ ansible_distribution_version }}/amdgpu-install_{{ amdgpu_install_build }}.el{{ ansible_distribution_major_version }}.noarch.rpm"
+  SLES: "https://repo.radeon.com/amdgpu-install/{{ amdgpu_install_rel }}/sle/{{ ansible_distribution_version }}/amdgpu-install-{{ amdgpu_install_build }}.noarch.rpm"
+
+# Packages to install after 'amdgpu-install' but before the usecases
+amdgpu_install_pre:
+  common:
+    - autoconf
+    - curl
+    - dkms
+    - ethtool
+    - infiniband-diags
+    - libtool
+    - lldpd
+    - mdadm
+    - net-tools
+    - rdma-core
+    - strace
+    - unzip
+    - wget
+    - zip
+  Debian:
+    - "linux-headers-{{ ansible_kernel }}"
+    - "linux-modules-extra-{{ ansible_kernel }}"
+  RedHat:
+    - kernel-headers
+    - kernel-devel-matched
+    - kernel-modules-extra

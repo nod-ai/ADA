@@ -1,0 +1,28 @@
+---
+# defaults file for amdgpu_install
+#
+# yamllint disable rule:line-length
+#
+# Determine if 'amdgpu-install' is attempted with 'amdgpu_install_pkg'; URL or file path (already on managed host, not copied)
+amdgpu_install_get: true
+
+# Construct the download URL for 'amdgpu-install' with ROCm release/build number
+amdgpu_install_rel: 6.2.2
+amdgpu_install_build: 6.2.60202-1
+
+# Packages to install aligning workflows/runtimes; default to the driver and Mesa
+amdgpu_install_usecases: 'dkms,graphics,multimedia'
+
+# Optional dictionary of command-line arguments and values for 'amdgpu-install'
+# amdgpu_install_args:
+#  accept-eula:
+#  vulkan: pro
+
+# Setting 'amdgpu_install_pkg' to a link (or file path) overrides both 'amdgpu_install_rel' and 'amdgpu_install_build' for the source of 'amdgpu-install{,-internal}'
+# Package file paths will work but are not copied, download URL is expected -- either constructed (templated) or overridden
+amdgpu_install_pkg: templated
+
+# 'internal' deployments may use these (and 'amdgpu-repo') to change repositories/builds
+# Requires override for 'amdgpu_install_pkg'; ignored when 'amdgpu-install-internal' not installed. Provides 'amdgpu-repo'.
+# amdgpu_install_rocm_branch: compute-rocm-dkms-no-npi-hipclang/14986
+# amdgpu_install_branch: '2065452'

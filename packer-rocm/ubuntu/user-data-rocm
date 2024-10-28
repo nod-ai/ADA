@@ -8,19 +8,12 @@ autoinstall:
   packages:
     # support potential use of the ansible-local provisioner
     - "ansible"
-    # pull venv+secondary Python executables
+    # suggested non-amdgpu/ROCm packages (for those, see 'amdgpu_install_pre' in the Ansible role)
     - "python3.10-venv"
     - "python3.11-venv"
-    # suggested packages
     - "ffmpeg"
     - "foot-terminfo"
     - "kitty-terminfo"
-    - "libavcodec-dev"
-    - "libavformat-dev"
-    - "libavutil-dev"
-    - "libdrm-amdgpu1"
-    - "libdrm-dev"
-    - "libdrm2"
     - "libelf-dev"
     - "libelf1"
     - "libexpat1"
@@ -37,7 +30,6 @@ autoinstall:
     - "libtinfo-dev"
     - "liburi-perl"
     - "libxml2-dev"
-    - "mesa-common-dev"
     - "pci.ids"
     - "pciutils"
     - "python3-pip"

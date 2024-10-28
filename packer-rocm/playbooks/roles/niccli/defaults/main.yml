@@ -22,6 +22,7 @@ niccli_requirements:  # mapped by 'ansible_os_family' fact
   common:
     - dkms
     - pciutils
+    - unzip
   Debian:
     - build-essential
     - ibverbs-providers
