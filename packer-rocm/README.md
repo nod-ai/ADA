@@ -89,3 +89,9 @@ These _environment variables_ are respected:
 * `http_proxy`
 * `https_proxy`
 * `no_proxy`
+
+#### Troubleshooting
+
+##### QEMU
+
+If the mount backing `workdir` runs out of space... the _QEMU_ process may pause/run indefinitely. Ensure sufficient space is - and remains - available. The disk location and size may be adjusted; see [I/O](#io) above.
