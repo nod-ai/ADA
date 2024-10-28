@@ -27,7 +27,9 @@ amdgpu_install_pre:
   Debian:
     - "linux-headers-{{ ansible_kernel }}"
     - "linux-modules-extra-{{ ansible_kernel }}"
+    - libyaml-cpp-dev  # used by 'rvs'
   RedHat:
     - kernel-headers
     - kernel-devel-matched
     - kernel-modules-extra
+    - yaml-cpp  # requires EPEL
