@@ -1,0 +1,5 @@
+---
+qemu:
+  hosts:
+    localhost:
+      ansible_connection: local

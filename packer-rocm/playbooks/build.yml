@@ -2,17 +2,21 @@
 # vim: ft=yaml.ansible
 # yamllint disable rule:line-length
 - name: Build 'packer-rocm'
-  hosts: localhost
+  hosts: qemu
+  environment:  # may be superfluous for your environment; will also be passed through Packer/to subsequent Ansible plays
+    http_proxy: "{{ lookup('ansible.builtin.env', 'http_proxy') | default(omit) }}"
+    https_proxy: "{{ lookup('ansible.builtin.env', 'https_proxy') | default(omit) }}"
+    no_proxy: "{{ lookup('ansible.builtin.env', 'no_proxy') | default(omit) }}"
   vars:
-    packer_dist: 'ubuntu'  # placeholder: other distributions may be supported
+    # placeholder: other distributions may be supported
+    packer_dist: ubuntu
+    # where [on the build host] to keep a copy of this repository and Packer assets (ISOs, virtual machine disks, EFI vars, etc)
+    workdir: /var/tmp/packer-rocm
     # system packages assume this path; 'cracklib' (systemd dep) collides with the 'packer' name (in sbin)
     packer_binary: '/usr/bin/packer'  # PATH reliance may confuse things. override.
-    packer_rocm_dir: "{{ (playbook_dir, '..') | path_join }}"
-    packer_maas_dir: "{{ (packer_rocm_dir, 'packer-maas') | path_join }}"
-    packer_var_hcl: "{{ (packer_dist, packer_dist + '-rocm.variables.pkr.hcl') | path_join }}"  # eg: 'ubuntu/ubuntu-rocm.variables.pkr.hcl'
     # Ansible is available in more places than our requirements
     packer_supported_hosts: ['Linux']
-    # Linux *builder host* prereqs
+    # *builder host* prereqs
     packer_prereqs:
       common:
         - qemu-kvm   # provides builder as a Virtual Machine; meta-package
@@ -32,12 +36,27 @@
         - fuse2fs
   tasks:
 
-    - name: Assert supported host
+    - name: Pre-flight tasks
       tags: ['always']
-      ansible.builtin.assert:
-        that:
-          - ansible_system in packer_supported_hosts
-        fail_msg: "Unsupported host: '{{ ansible_system }}', want: {{ packer_supported_hosts }}"
+      block:
+
+        - name: Assert supported host
+          ansible.builtin.assert:
+            that:
+              - ansible_system in packer_supported_hosts
+            fail_msg: "Unsupported host: '{{ ansible_system }}', want: {{ packer_supported_hosts }}"
+
+        - name: Synchronize Workspace  # required for both 'prep' and 'build' tags (installing plugins, actually building)
+          ansible.posix.synchronize:
+            src: "{{ (playbook_dir, '..') | path_join }}/"  # for 'packer' and test/edit cycle, copy ourselves to the builder (avoid another clone)
+            dest: "{{ workdir }}"
+            delete: "{{ true if workdir is match('/var/tmp/packer-rocm') else omit }}"  # if changed, don't assume outstanding files may be removed [in the destination, from the source]
+            rsync_opts:
+              - "--no-motd"
+              # ignore artifacts
+              - "--exclude='*.tar.gz'"
+              # preserve Packer ISO cache/consistent 'ok/changed' output
+              - "--exclude='**/packer_cache'"
 
     - name: Preparation
       tags: ['prep']
@@ -91,15 +110,16 @@
             state: present
 
         - name: "Ensure Packer plugins are installed"
-          ansible.builtin.command: "{{ packer_binary }} init {{ (packer_maas_dir, packer_dist) | path_join }}"
+          ansible.builtin.command: "{{ packer_binary }} init {{ (workdir, packer_dist) | path_join }}"
           changed_when: false
 
     - name: Build
       tags: ['build']
       block:
+
         - name: Read 'packer-rocm' HCL variables
           ansible.builtin.command: >
-            awk '$1 == "variable" {print $2}' {{ (packer_rocm_dir, packer_var_hcl) | path_join }}
+            awk '$1 == "variable" {print $2}' {{ (workdir, packer_dist, packer_dist + '-rocm.variables.pkr.hcl') | path_join }}
           register: packer_rocm_hcl_awk
           changed_when: false
 
@@ -107,22 +127,7 @@
           ansible.builtin.set_fact:
             packer_vars: "{{ packer_rocm_hcl_awk.stdout_lines | replace('\"', '') }}"
 
-        - name: "Synchronize 'packer-maas' with ADA 'packer-rocm' assets"
-          ansible.posix.synchronize:
-            src: "{{ packer_rocm_dir }}/"  # trailing '/' on source is significant; copying *contents* of the dir
-            dest: "{{ packer_maas_dir }}"
-            rsync_opts:
-              - "--exclude='.git'"
-              - "--exclude='*.md'"
-              - "--exclude='ansible.cfg'"
-              - "--exclude='inventories'"
-              - "--exclude='requirements.yml'"
-              - "--exclude='packer-maas'"
-              - "--exclude='NOTICE'"
-              - "--exclude='LICENSE'"
-              - "--exclude='TODO'"
-
-        - name: "Run 'packer build', create '{{ _creates | basename }}'"
+        - name: "Run 'packer build', create '{{ _creates }}'"
           ansible.builtin.command:
             cmd: >
               {{ packer_binary }} build
@@ -130,11 +135,9 @@
               {{ '-var ' + _var + '=' + vars[_var] }}
               {% endfor %}
               -only=qemu.rocm .
-            chdir: "{{ build_dir }}"
-            creates: "{{ _creates }}"  # avoid overwriting - require delete
+            chdir: "{{ (workdir, packer_dist) | path_join }}"
+            creates: "{{ _creates }}"  # avoid replacing the file; require deletion
           vars:
-            build_dir: "{{ (packer_maas_dir, packer_dist) | path_join }}"
-            _filename: "{{ rocm_filename | default(packer_dist + '-rocm.tar.gz') }}"
-            _creates: "{{ (build_dir, _filename) | path_join }}"
+            _creates: "{{ (workdir, packer_dist, (rocm_filename | default(packer_dist + '-rocm.tar.gz'))) | path_join }}"
           environment:
             PACKER_LOG: '1'  # wanted as str

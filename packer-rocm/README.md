@@ -30,15 +30,16 @@ ansible-galaxy collection install -r ADA/packer-rocm/requirements.yml
 
 ```shell
 ansible-playbook ADA/packer-rocm/playbooks/build.yml \
+    -i inventories/localhost.yml \
     -e amdgpu_install_usecases=rocm \
     -e rocm_builder_cpus=8 \
     -e qemu_binary="qemu-kvm" \
     -K
 ```
 
-Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host, skip with `-t build`.
+The build host(s) may be changed with an _inventory file_ using `-i path/to/file`. _Ansible_ will expect the group `qemu`. See [upstream documentation](https://docs.ansible.com/ansible/latest/inventory_guide/index.html) for more information.
 
-When _changing the kernel:_ include `extra-modules`, `headers`, and other packaged build requirements with `-e rocm_extras`. Versions are suggested.
+Remove `-K` if your account does _not_ require a passphrase for `sudo`. This is used to prepare the host, skip with `-t build`.
 
 **All** variables are _optional_. Please see [I/O](#io) for more.
 
@@ -46,7 +47,8 @@ When _changing the kernel:_ include `extra-modules`, `headers`, and other packag
 
 | Variable | Description |
 |:----------:|-------------|
-| `hidden` | If the VNC window for the VM is _hidden_ during build. Adjustment brings _display_ requirements.<br/>**Default:** `True` |
+| `workdir` | _Fully qualified_ path for storing the repository, ISO, and Virtual Machine on the build host.<br/>**Default:** `/var/tmp/packer-rocm` |
+| `hidden` | Controls _VNC_ visibility during build. Brings _display_ requirements.<br/>**Default:** `True`. See also: `ForwardX11=yes` _(with SSH)_ or VNC _(to QEMU)_ |
 | `amdgpu_install_rel` | The _release_ portion of the `amdgpu-install` URL.<br/>**Default:** _6.2.2_, [Reference](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/amdgpu-install.html) |
 | `amdgpu_install_build` | The _build_ portion of the URL.<br/>**Default:** _6.2.60202-1_ |
 | `amdgpu_install_pkg` | Override for the `amdgpu-install` package. URL or file path _(not copied)_.<br/>**Default:** _templated_ from `amdgpu_install_rel` and `amdgpu_install_build` |
@@ -89,13 +91,3 @@ These _environment variables_ are respected:
 * `http_proxy`
 * `https_proxy`
 * `no_proxy`
-
-#### Troubleshooting
-
-##### GRUB
-
-Builds using _'software emulation'_ may find more time required in the `wait` strings with `boot_command`, [example](./ubuntu/ubuntu-rocm.pkr.hcl)
-
-##### QEMU
-
-If `packer build` says the _QEMU_ builder is missing, ensure the _Git_ submodules are cloned. The _Ansible_ playbook should have run `packer init`, installing the plugins `packer-maas` _and_ this project require... assuming a complete set of _HCL_ files.

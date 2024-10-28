@@ -51,18 +51,17 @@ build {
     ]
   }
 
-  # copy supporting 'packer-maas' assets
+  # copy supporting 'packer-maas' assets into the builder VM
   provisioner "file" {
     destination = "/tmp/"
     sources     = [
-      "${path.root}/scripts/curtin-hooks",
-      "${path.root}/scripts/setup-bootloader",
-      "${path.root}/scripts/install-custom-packages"
+      "${path.root}/../packer-maas/ubuntu/scripts/curtin-hooks",
+      "${path.root}/../packer-maas/ubuntu/scripts/setup-bootloader",
+      "${path.root}/../packer-maas/ubuntu/scripts/install-custom-packages"
     ]
   }
 
-
-  # remove step/message from 'install-custom-packages' RE: uninstalling existing kernels; DKMS/'cloud-init'
+  # remove parts of 'install-custom-packages' RE: uninstalling kernels; wanted for DKMS/'cloud-init'
   provisioner "shell" {
     inline_shebang = "/bin/bash"
     inline = [
@@ -74,7 +73,7 @@ build {
     environment_vars  = ["HOME_DIR=/home/ubuntu", "http_proxy=${var.http_proxy}", "https_proxy=${var.https_proxy}", "no_proxy=${var.no_proxy}", "CLOUDIMG_CUSTOM_KERNEL=${var.rocm_kernel}", "DEBIAN_FRONTEND=noninteractive"]
     execute_command   = "{{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
     expect_disconnect = true
-    scripts           = ["${path.root}/scripts/curtin.sh", "${path.root}/scripts/networking.sh", "${path.root}/scripts/cloudimg/install-custom-kernel.sh"]
+    scripts           = ["${path.root}/../packer-maas/ubuntu/scripts/curtin.sh", "${path.root}/../packer-maas/ubuntu/scripts/networking.sh", "${path.root}/../packer-maas/ubuntu/scripts/cloudimg/install-custom-kernel.sh"]
   }
 
   provisioner "ansible" {
@@ -171,8 +170,8 @@ build {
       "  echo '*Not* mapping gzip to pigz for parallel compression'",
       "fi",
       # mount the image, prepare the tarball, compress, and finally clean up temporary i/o
-      "source ../scripts/fuse-nbd",
-      "source ../scripts/fuse-tar-root",
+      "source ../packer-maas/scripts/fuse-nbd",
+      "source ../packer-maas/scripts/fuse-tar-root",
       "rm -rf output-${source.name} ${path.root}/custom-packages.tar.gz"
     ]
     inline_shebang = "/bin/bash -e"

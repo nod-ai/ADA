@@ -111,9 +111,32 @@ variable "niccli_driver" {
   description = "If the `bnxt_{en,re}` NIC drivers are included."
 }
 
+variable "http_directory" {
+  type    = string
+  default = "http"
+}
+
+variable "http_proxy" {
+  type    = string
+  default = "${env("http_proxy")}"
+}
+
+variable "https_proxy" {
+  type    = string
+  default = "${env("https_proxy")}"
+}
+
+variable "no_proxy" {
+  type    = string
+  default = "${env("no_proxy")}"
+}
+
 packer {
   required_plugins {
-    # the qemu plugin/builder is also required, but it's effectively globbed from other files. Ansible is unique among the set
+    qemu = {
+      version = "~> 1.0"
+      source  = "github.com/hashicorp/qemu"
+    }
     ansible = {
       version = "~> 1"
       source = "github.com/hashicorp/ansible"
