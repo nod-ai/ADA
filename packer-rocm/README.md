@@ -30,7 +30,7 @@ ansible-galaxy collection install -r ADA/packer-rocm/requirements.yml
 
 ```shell
 ansible-playbook ADA/packer-rocm/playbooks/build.yml \
-    -i inventories/localhost.yml \
+    -i ADA/packer-rocm/inventories/localhost.yml \
     -e amdgpu_install_usecases=rocm \
     -e builder_cpus=8 \
     -e qemu_binary="qemu-kvm" \
