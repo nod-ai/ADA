@@ -1,6 +1,5 @@
-#Copyright(C) 2024 Advanced Micro Devices, Inc. All rights reserved.
-
 #!/bin/bash
+#Copyright(C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  
 # Function for logging with timestamps
 log() {
