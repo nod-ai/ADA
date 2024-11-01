@@ -20,6 +20,7 @@
     packer_prereqs:
       common:
         - qemu-kvm   # provides builder as a Virtual Machine; meta-package
+        - ansible    # configures the builder VM with 'amdgpu', 'ROCm', and more
         - git        # 'ansible-pull' requires 'git' to clone; should be installed already
         - rsync      # synchronize module
         - xorriso    # cloud-init data
@@ -30,6 +31,9 @@
         - edk2-ovmf  # firmware
         - e2fsprogs  # provides 'fuse2fs', tarball/image work
         - nbdkit-nbd-plugin
+        # following two collections are provided by 'ansible' on Ubuntu; not so on EL/derivatives
+        - ansible-collection-community-general
+        - ansible-collection-ansible-posix
       Debian:
         - ovmf
         - libnbd-bin
