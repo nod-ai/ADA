@@ -5,12 +5,13 @@
 amdgpu_install_pkg_patts:  # indexed by 'ansible_distribution' fact
   Ubuntu: "https://repo.radeon.com/amdgpu-install/{{ amdgpu_install_rel }}/ubuntu/{{ ansible_distribution_release }}/amdgpu-install_{{ amdgpu_install_build }}_all.deb"
   RedHat: "https://repo.radeon.com/amdgpu-install/{{ amdgpu_install_rel }}/rhel/{{ ansible_distribution_version }}/amdgpu-install_{{ amdgpu_install_build }}.el{{ ansible_distribution_major_version }}.noarch.rpm"
+  Fedora: "https://repo.radeon.com/amdgpu-install/{{ amdgpu_install_rel }}/rhel/9.4/amdgpu-install_{{ amdgpu_install_build }}.el9.noarch.rpm"
   SLES: "https://repo.radeon.com/amdgpu-install/{{ amdgpu_install_rel }}/sle/{{ ansible_distribution_version }}/amdgpu-install-{{ amdgpu_install_build }}.noarch.rpm"
 
 # Packages to install after 'amdgpu-install' but before the usecases
 amdgpu_install_pre:
   common:
-    - autoconf
+    - cmake
     - curl
     - dkms
     - ethtool
@@ -25,11 +26,17 @@ amdgpu_install_pre:
     - wget
     - zip
   Debian:
+    - autoconf
+    - automake
+    - libstdc++-12-dev
     - "linux-headers-{{ ansible_kernel }}"
     - "linux-modules-extra-{{ ansible_kernel }}"
     - libyaml-cpp-dev  # used by 'rvs'
+    - pkg-config
   RedHat:
+    - '@Development Tools'  # quoting required for group notation
     - kernel-headers
     - kernel-devel-matched
     - kernel-modules-extra
+    - libstdc++-devel
     - yaml-cpp  # requires EPEL
