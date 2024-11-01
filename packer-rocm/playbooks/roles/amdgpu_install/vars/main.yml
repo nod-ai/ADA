@@ -10,7 +10,7 @@ amdgpu_install_pkg_patts:  # indexed by 'ansible_distribution' fact
 # Packages to install after 'amdgpu-install' but before the usecases
 amdgpu_install_pre:
   common:
-    - autoconf
+    - cmake
     - curl
     - dkms
     - ethtool
@@ -25,9 +25,17 @@ amdgpu_install_pre:
     - wget
     - zip
   Debian:
+    - autoconf
+    - automake
+    - libstdc++-12-dev
     - "linux-headers-{{ ansible_kernel }}"
     - "linux-modules-extra-{{ ansible_kernel }}"
+    - libyaml-cpp-dev  # used by 'rvs'
+    - pkg-config
   RedHat:
+    - '@Development Tools'  # quoting required for group notation
     - kernel-headers
     - kernel-devel-matched
     - kernel-modules-extra
+    - libstdc++-devel
+    - yaml-cpp  # requires EPEL
