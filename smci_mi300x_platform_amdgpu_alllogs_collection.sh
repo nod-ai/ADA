@@ -32,7 +32,7 @@ done
  
 # Step 1: Collect Diagnostic Data
 log "Collecting diagnostic data..."
-TASK_RESPONSE=$(curl -k -u "$BMC_USERNAME:$BMC_PASSWORD" \
+TASK_RESPONSE=$(curl -s -k -u "$BMC_USERNAME:$BMC_PASSWORD" \
     "https://$BMC_IP/redfish/v1/Oem/Supermicro/MI300X/Systems/UBB/LogServices/DiagLogs/Actions/LogService.CollectDiagnosticData" \
     -X POST -d '{"DiagnosticDataType":"OEM", "OEMDiagnosticDataType" : "AllLogs"}')
 check_curl_error "Failed to collect diagnostic data."
@@ -51,7 +51,7 @@ while [ "$TASK_STATE" != "Completed" ]; do
         log "Task did not complete within the expected timeframe."
         exit 1
     fi
-    TASK_STATE=$(curl -k -u "$BMC_USERNAME:$BMC_PASSWORD" \
+    TASK_STATE=$(curl -s -k -u "$BMC_USERNAME:$BMC_PASSWORD" \
         -X GET "https://$BMC_IP/redfish/v1/Oem/Supermicro/MI300X/TaskService/Tasks/$TASK_ID" \
         | grep -oP '(?<=TaskState": ")[^"]*')
     log "Current State: $TASK_STATE"
@@ -64,7 +64,7 @@ done
 log "Task completed!"
  
 # Extract Entry ID after completion
-ENTRY_ID=$(curl -k -u "$BMC_USERNAME:$BMC_PASSWORD" \
+ENTRY_ID=$(curl -s -k -u "$BMC_USERNAME:$BMC_PASSWORD" \
     -X GET "https://$BMC_IP/redfish/v1/Oem/Supermicro/MI300X/TaskService/Tasks/$TASK_ID" \
     | grep -oP '(?<=Entries/)[^"]*')
 log "Entry ID: $ENTRY_ID"
@@ -73,7 +73,7 @@ log "Entry ID: $ENTRY_ID"
 OUTPUT_DIR="logs"
 mkdir -p "$OUTPUT_DIR"
 log "Downloading all logs..."
-curl -k -u "$BMC_USERNAME:$BMC_PASSWORD" \
+curl -s -k -u "$BMC_USERNAME:$BMC_PASSWORD" \
     "https://$BMC_IP/redfish/v1/Oem/Supermicro/MI300X/Systems/UBB/LogServices/DiagLogs/Entries/$ENTRY_ID/attachment" > "$OUTPUT_DIR/all_logs.tar.xz"
 check_curl_error "Failed to download logs."
 log "All logs downloaded as $OUTPUT_DIR/all_logs.tar.xz"
