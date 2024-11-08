@@ -10,3 +10,43 @@ niccli_pkg_anyarch:
 niccli_pkg_ext:
   Debian: '.deb'
   RedHat: '.rpm'
+
+# distribution packages to install before those for 'niccli'; mapped by 'ansible_os_family' fact
+niccli_requirements:
+  common:
+    - automake  # only 'suggested' by 'build-essential' metapkg, not mentioned by 'Development Tools' group
+    - autoconf  # "
+    - dkms
+    - infiniband-diags
+    - pciutils
+    - rdma-core
+    - strace
+    - unzip
+  Debian:
+    - build-essential
+    - ibverbs-providers
+    - ibverbs-utils
+    - libaio-dev
+    - libibverbs1
+    - libibverbs-dev
+    - libstdc++-12-dev
+    - libelf-dev
+    - libibumad-dev
+    - librdmacm-dev
+    - linux-headers-generic
+    - "linux-headers-{{ ansible_kernel }}"
+    - "linux-modules-extra-{{ ansible_kernel }}"
+    - pkg-config
+    - rdmacm-utils
+  RedHat:
+    - '@Development Tools'  # group notation (@...) requires quoting
+    - kernel-headers
+    - kernel-devel-matched
+    - kernel-modules-extra
+    - libstdc++-devel
+    - libaio-devel
+    - libibumad
+    - libibverbs
+    - libibverbs-utils
+    - elfutils-libelf-devel
+    - librdmacm-utils
