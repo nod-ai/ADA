@@ -16,6 +16,7 @@ niccli_requirements:
   common:
     - automake  # only 'suggested' by 'build-essential' metapkg, not mentioned by 'Development Tools' group
     - autoconf  # "
+    - cmake
     - dkms
     - infiniband-diags
     - pciutils
