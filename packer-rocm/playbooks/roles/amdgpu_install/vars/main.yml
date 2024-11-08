@@ -10,6 +10,8 @@ amdgpu_install_pkg_patts:  # indexed by 'ansible_distribution' fact
 # Packages to install after 'amdgpu-install' but before the usecases
 amdgpu_install_pre:
   common:
+    - automake  # only 'suggested' by 'build-essential' metapkg, not mentioned by 'Development Tools' group
+    - autoconf  # "
     - cmake
     - curl
     - dkms
@@ -25,8 +27,6 @@ amdgpu_install_pre:
     - wget
     - zip
   Debian:
-    - autoconf
-    - automake
     - libstdc++-12-dev
     - "linux-headers-{{ ansible_kernel }}"
     - "linux-modules-extra-{{ ansible_kernel }}"
