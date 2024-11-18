@@ -14,11 +14,20 @@ The AMD Redfish Exporter is a Go server that subscribes to events and telemetry 
 
 ### Prerequisites
 
-- Go 1.23 or later
-- Docker
 - SLURM (for node management functionality)
 
+### Download the Pre-built Binary from Azure
+You can download the pre-built binary of the AMD Redfish Exporter from Azure Blob Storage using the following command:
+
+```bash
+wget https://rocmreleases.blob.core.windows.net/redfish/amd-redfish-exporter
+```
+
 ### Building from source
+
+- Requirements:
+    - Go 1.23 or later
+    - Docker
 
 - Clone the repository:
 
