@@ -2,4 +2,5 @@
 collections:
   - name: ansible.posix
   - name: community.general
+    version: '>=6.4.0'  # specificity for the 'persistent' argument for the 'modprobe' module
 roles: []
