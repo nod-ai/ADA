@@ -67,7 +67,7 @@ log "Task completed!"
 ENTRY_ID=$(curl -s -k -u "$BMC_USERNAME:$BMC_PASSWORD" \
     -X GET "https://$BMC_IP/redfish/v1/Oem/Supermicro/MI300X/TaskService/Tasks/$TASK_ID" \
     | grep -oP '(?<=Entries/)[^"]*')
-log "Entry ID: $ENTRY_ID"
+#log "Entry ID: $ENTRY_ID"
  
 # Step 3: Download All Logs to logs directory
 OUTPUT_DIR="logs"
