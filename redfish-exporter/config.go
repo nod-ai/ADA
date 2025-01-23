@@ -49,21 +49,25 @@ type Config struct {
 		CertFile string
 		KeyFile  string
 	}
-	SlurmToken          string
-	SlurmControlNode    string
-	SlurmUser           string
-	SubscriptionPayload SubscriptionPayload
-	RedfishServers      []RedfishServer
-	TriggerEvents       []TriggerEvent
-	PrometheusConfig    PrometheusConfig
-	context             *tls.Config
-	eventCount          int
-	dataBuffer          []byte
+	SlurmToken           string
+	SlurmControlNode     string
+	SlurmUser            string
+	SlurmScontrolPath    string
+	SlurmDrainExcludeStr string
+	SubscriptionPayload  SubscriptionPayload
+	RedfishServers       []RedfishServer
+	TriggerEvents        []TriggerEvent
+	PrometheusConfig     PrometheusConfig
+	context              *tls.Config
+	eventCount           int
+	dataBuffer           []byte
 }
 
 type TriggerEvent struct {
-	Severity string `json:"Severity"`
-	Action   string `json:"Action"`
+	Severity          string `json:"Severity"`
+	Action            string `json:"Action"`
+	Message           string `json:"Message"`
+	DrainReasonPrefix string `json:"DrainReasonPrefix"`
 }
 
 type PrometheusConfig struct {
@@ -119,6 +123,8 @@ func setupConfig() Config {
 	AppConfig.SlurmToken = os.Getenv("SLURM_TOKEN")
 	AppConfig.SlurmControlNode = os.Getenv("SLURM_CONTROL_NODE")
 	AppConfig.SlurmUser = os.Getenv("SLURM_USER")
+	AppConfig.SlurmDrainExcludeStr = os.Getenv("SLURM_DRAIN_EXCLUDE_REASON_LIST")
+	AppConfig.SlurmScontrolPath = os.Getenv("SLURM_SCONTROL_PATH")
 
 	subscriptionPayloadJSON := os.Getenv("SUBSCRIPTION_PAYLOAD")
 	if err := json.Unmarshal([]byte(subscriptionPayloadJSON), &AppConfig.SubscriptionPayload); err != nil {
