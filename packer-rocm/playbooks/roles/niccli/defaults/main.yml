@@ -9,7 +9,7 @@
 #   - 'NetXtreme-E Linux Driver'
 #
 # NOTE/Warning: Patterns in URLs have not been consistent enough for templating to make [much] sense. Directories change along with releases.
-niccli_url: 'https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/Thor2/GCA2/bcm5760x_231.2.63.0a.zip'
+niccli_url: 'https://docs.broadcom.com/docs-and-downloads/ethernet-network-adapters/NXE/BRCM_232.1.132.8/bcm_232.1.132.8c.tar.gz'
 
 # 'niccli_sum' deliberately is *not* defaulted with the URL.
 # if users want to change the link... they should not be required to correct or empty the checksum. this should act as opt-in validation, not a requirement.
