@@ -1,7 +1,7 @@
 ---
 # vim: ft=yaml.ansible
 - name: Package Globber  # the Packer 'file' provisioner copies the files to the builder VM; this processes/installs
-  hosts: default
+  hosts: all
   become: true
   environment:  # may be superfluous for your environment; mapped through Packer HCL with 'ansible_env_vars'
     http_proxy: "{{ lookup('ansible.builtin.env', 'http_proxy') | default(omit) }}"
