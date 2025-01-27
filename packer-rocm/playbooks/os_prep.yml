@@ -11,60 +11,67 @@
     os_rdma_rename_mode: 'NAME_KERNEL'  # ref: https://github.com/linux-rdma/rdma-core/blob/master/Documentation/udev.md#stable-names
     # *fully qualified* path on the controller where repo overrides can be found; intended for/changed by Packer
     os_repos_src: /srv/repos
+    os_repos_sync: true  # if the playbook should copy repositories from 'os_repos_src' to the managed system
   tasks:
 
-    - name: Create temporary directory for repository overrides
-      ansible.builtin.tempfile:
-        state: directory
-        suffix: repos
-      register: mktemp
+    - name: Repository Management Block
+      when: os_repos_sync is truthy(convert_bool=True)
+      tags: ['repo', 'repos']
+      block:
 
-    - name: Mirror repository overrides (for searching on managed host w/ facts)
-      ansible.posix.synchronize:
-        src: "{{ os_repos_src }}/"  # trailing '/' is significant, ensures the contents of the path are copied
-        dest: "{{ mktemp.path }}"
-        recursive: true
-        archive: true  # retain ownership/modes/etc
-        mode: push
+        - name: Create temporary directory for repository overrides
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: repos
+          register: mktemp
 
-    - name: "Search for repository overrides in '{{ mktemp.path }}'"
-      ansible.builtin.find:
-        paths:
-          - "{{ mktemp.path }}"
-        patterns: "{{ os_repo_patts[ansible_os_family] }}"
-        recurse: true
-        file_type: file
-      register: os_repo_search
-      vars:
-        os_repo_patts:
-          RedHat:
-            - '*.repo'
-          Debian:
-            - '*.list'
+        - name: Mirror repository overrides (for searching on managed host w/ facts)
+          ansible.posix.synchronize:
+            src: "{{ os_repos_src }}/"  # trailing '/' is significant, ensures the contents of the path are copied
+            dest: "{{ mktemp.path }}"
+            recursive: true
+            archive: true  # retain ownership/modes/etc
+            mode: push
 
-    - name: 'Copy [relevant] repository files'
-      become: true
-      ansible.builtin.copy:
-        src: "{{ repofile }}"
-        dest: "{{ os_repo_paths[ansible_os_family] }}"
-        mode: preserve
-        owner: root
-        group: root
-        remote_src: true
-      loop: "{{ os_repo_search.files | map(attribute='path') }}"
-      loop_control: { loop_var: repofile }
-      vars:
-        os_repo_paths:
-          Debian: /etc/apt/sources.list.d/
-          RedHat: /etc/yum.repos.d/
+        - name: "Search for repository overrides in '{{ mktemp.path }}'"
+          ansible.builtin.find:
+            paths:
+              - "{{ mktemp.path }}"
+            patterns: "{{ os_repo_patts[ansible_os_family] }}"
+            recurse: true
+            file_type: file
+          register: os_repo_search
+          vars:
+            os_repo_patts:
+              RedHat:
+                - '*.repo'
+              Debian:
+                - '*.list'
 
-    - name: Clean temporary directory
-      ansible.builtin.file:
-        state: absent
-        path: "{{ mktemp.path }}"
+        - name: 'Copy [relevant] repository files'
+          become: true
+          ansible.builtin.copy:
+            src: "{{ repofile }}"
+            dest: "{{ os_repo_paths[ansible_os_family] }}"
+            mode: preserve
+            owner: root
+            group: root
+            remote_src: true
+          loop: "{{ os_repo_search.files | map(attribute='path') }}"
+          loop_control: { loop_var: repofile }
+          vars:
+            os_repo_paths:
+              Debian: /etc/apt/sources.list.d/
+              RedHat: /etc/yum.repos.d/
+
+        - name: Clean temporary directory
+          ansible.builtin.file:
+            state: absent
+            path: "{{ mktemp.path }}"
 
     - name: "Manage RDMA device rename mode ({{ os_rdma_rename_mode }})"
       when: os_rdma_rename is truthy(convert_bool=True)
+      tags: ['rdma', 'udev']
       ansible.builtin.lineinfile:
         # placing this in '/etc' precedes '/usr' or '/lib', overriding packages/enduring updates; see 'man 7 udev'
         path: /etc/udev/rules.d/60-rdma-persistent-naming.rules
