@@ -1,6 +1,6 @@
 ---
 - name: Manage 'amdgpu-install'
-  hosts: default
+  hosts: all
   environment:
     LANG: C  # some tasks process std{out,err}, aim for consistency
     # may be superfluous for your environment; mapped through Packer HCL with 'ansible_env_vars'

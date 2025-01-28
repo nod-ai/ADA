@@ -2,7 +2,7 @@
 # vim: ft=yaml.ansible
 # This play runs before any others [by Packer, as provisioners]. Provides package repository and RDMA device naming overrides
 - name: OS Preparation
-  hosts: default
+  hosts: all
   become: true
   vars:  # change these with '-e var=...'
     # one may find 'NAME_FALLBACK'/device-driven naming inconsistency with certain packages installed
