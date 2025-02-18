@@ -1,6 +1,8 @@
 #!/bin/bash
 #Copyright(C) 2024 Advanced Micro Devices, Inc. All rights reserved.
 
+DEBUG=false
+
 # Function for logging with timestamps
 log() {
     echo "$(date +'%Y-%m-%d %H:%M:%S') - $1"
@@ -17,7 +19,7 @@ check_curl_error() {
 # Wait for all UBB SMC tasks to complete
 tasksWait() {
     TIMEOUT_SECONDS=$((25 * 60)) # 25 minutes
-    INTERVAL=5
+    INTERVAL=3
 
     # Test to make sure there is only one task
     tasks=$(curl -k -s -u "${BMC_USERNAME}:${BMC_PASSWORD}" -X GET \
@@ -25,12 +27,13 @@ tasksWait() {
         https://${BMC_IP}/redfish/v1/Oem/Supermicro/MI300X/TaskService/Tasks |
         python3 -c "import sys, json; print(json.load(sys.stdin)['Members@odata.count'])")
 
-    log "Tasks: ${tasks}"
+    if ${DEBUG}; then
+        log "Tasks: ${tasks}"
+    fi
 
     if [[ ${tasks} != "0" ]]; then
-        printf "\n"
-
         for task in $(seq 0 $((tasks - 1))); do
+            newlineNeeded=0
             elapsedTime=0
 
             # Poll the task status until it's completed or failed
@@ -42,7 +45,10 @@ tasksWait() {
 
                 case "$STATUS" in
                 "Completed")
-                    printf "\n%s" "Task ${task} completed successfully."
+                    if ${DEBUG}; then
+                        printf "\n%s" "Task ${task} completed successfully."
+                    fi
+
                     break
                     ;;
                 "Failed")
@@ -51,12 +57,14 @@ tasksWait() {
                     break
                     ;;
                 "Running" | "New" | "Pending")
+                    newlineNeeded=1
                     printf "\r%s" "Task ${task} still running, elapsed time ${elapsedTime}s"
                     sleep ${INTERVAL}
                     elapsedTime=$((elapsedTime + INTERVAL))
                     ;;
                 *)
-                    printf "\r%s" "Unknown task status: $STATUS, elapsed time ${elapsedTime}s"
+                    newlineNeeded=1
+                    printf "\r%s" "Unknown task status: ${STATUS}, task ${task}, elapsed time ${elapsedTime}s"
                     sleep ${INTERVAL}
                     elapsedTime=$((elapsedTime + INTERVAL))
                     ;;
@@ -68,7 +76,9 @@ tasksWait() {
                 fi
             done
 
-            printf "\n"
+            if [[ ${newlineNeeded} != 0 ]]; then
+                printf "\n"
+            fi
         done
     fi
 }
@@ -109,7 +119,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Step 1: Collect Diagnostic Data
-log "Collecting diagnostic data..."
+log "Collecting AllLogs file..."
 taskResponse=$(curl -s -k -u "${BMC_USERNAME}:${BMC_PASSWORD}" \
     "https://${BMC_IP}/redfish/v1/Oem/Supermicro/MI300X/Systems/UBB/LogServices/DiagLogs/Actions/LogService.CollectDiagnosticData" \
     -X POST -d '{"DiagnosticDataType":"OEM", "OEMDiagnosticDataType" : "AllLogs"}')
@@ -153,7 +163,9 @@ for ((entry = $((entries - 1)); entry >= 0; entry--)); do
 done
 
 entryId=${entryGreatest}
-log "Entry ID: ${entryId}"
+if ${DEBUG}; then
+    log "Entry ID: ${entryId}"
+fi
 
 # Step 4: Check to make sure the entry is an AllLogs
 entryType=$(curl -k -s -u "${BMC_USERNAME}:${BMC_PASSWORD}" -X GET \
@@ -167,16 +179,16 @@ if [[ ${entryType} != "AllLogs" ]]; then
 fi
 
 # Step 5: Download All Logs to logs directory
-OUTPUT_DIR="logs"
-mkdir -p "${OUTPUT_DIR}"
-log "Downloading all logs..."
+log "Downloading AllLogs..."
 
 attachment=$(curl -k -s -u "${BMC_USERNAME}:${BMC_PASSWORD}" -X GET \
     -H 'Content-Type: application/json' -H 'Accept: application/json' \
     https://${BMC_IP}/redfish/v1/Oem/Supermicro/MI300X/Systems/UBB/LogServices/DiagLogs/Entries |
     python3 -c "import sys, json; print(json.load(sys.stdin)['Members'][${entryId}]['AdditionalDataURI'])")
 
+filename="${BMC_IP}_$(date +"%Y-%m-%dT%H-%M-%S")_all_logs.tar.xz"
 curl -k -s -u "${BMC_USERNAME}:${BMC_PASSWORD}" -X GET \
-    https://${BMC_IP}${attachment} >"${OUTPUT_DIR}/all_logs.tar.xz"
+    https://${BMC_IP}${attachment} >${filename}
 check_curl_error "Failed to download logs."
-log "All logs downloaded as ${OUTPUT_DIR}/all_logs.tar.xz"
+log "All logs downloaded as ${filename}"
+
