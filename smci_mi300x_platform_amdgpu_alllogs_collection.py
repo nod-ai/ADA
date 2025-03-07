@@ -290,6 +290,9 @@ def main():
     # ----------------------------------------------------------------
     # 4. Wait for tasks to complete
     # ----------------------------------------------------------------
+    # Sleep to ensure the task started
+    time.sleep(2)
+
     tasks_wait(bmc_ip, bmc_username, bmc_password)
 
     # ----------------------------------------------------------------
