@@ -84,7 +84,7 @@ def prompt_for_bmc_ip():
 def http_request_with_retries(method, url, max_retries=3, delay=2, **kwargs):
     """
     Attempt an HTTP request up to `max_retries` times. If a transient error
-    like a connection timeout or reset occurs, wait `delay` seconds before
+    (connection timeout, reset, etc.) occurs, wait `delay` seconds before
     trying again.
 
     :param method: "get", "post", etc.
@@ -92,45 +92,48 @@ def http_request_with_retries(method, url, max_retries=3, delay=2, **kwargs):
     :param max_retries: Maximum number of total attempts.
     :param delay: Delay in seconds between retry attempts.
     :param kwargs: Additional arguments to pass to requests.request().
-    :return: requests.Response object on success; sys.exit on repeated failures.
+    :return: requests.Response object on success; sys.exit(1) on repeated failures.
     """
 
-    """Create a requests session with retry logic."""
+    # Create a session and properly attach retry logic
     session = requests.Session()
     retries = Retry(
-        total=5,  # Number of retries
-        backoff_factor=2,  # Exponential backoff factor
-        status_forcelist=[500, 502, 503, 504],  # Retry on these HTTP errors
+        total=max_retries,  # number of retries
+        backoff_factor=2,  # exponential backoff factor
+        status_forcelist=[500, 502, 503, 504],  # retry only on these status codes
         allowed_methods=["GET", "POST"],
     )
-    session.mount("https://", HTTPAdapter(max_retries))
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    session.mount("http://", HTTPAdapter(max_retries=retries))
 
     for attempt in range(1, max_retries + 1):
         try:
-            if method == "get":
+            if method.lower() == "get":
                 response = session.get(url, verify=False, timeout=10, **kwargs)
-            elif method == "post":
+            elif method.lower() == "post":
                 response = session.post(url, verify=False, timeout=10, **kwargs)
             else:
-                raise ValueError("Unsupported HTTP method")
+                raise ValueError(f"Unsupported HTTP method: {method}")
+
             return response
+
         except (
             requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,
             requests.exceptions.RequestException,
         ) as e:
-            # These are typical transient errors that can occur on unreliable networks
+            # Typical transient errors on unreliable networks
             if attempt < max_retries:
-                log(
-                    f"Request error: {e}. Retrying in {delay} seconds (attempt {attempt}/{max_retries})."
+                print(
+                    f"Request error: {e}. Retrying in {delay} seconds "
+                    f"(attempt {attempt}/{max_retries})."
                 )
                 time.sleep(delay)
             else:
-                log(f"Request failed after {max_retries} attempts: {e}")
+                print(f"Request failed after {max_retries} attempts: {e}")
                 sys.exit(1)
 
-    # If somehow we got here, return None or exit
-    # (normally you'd never get here because of sys.exit).
+    # Normally unreachable because of sys.exit(1) on the last attempt
     sys.exit(1)
 
 
@@ -165,6 +168,9 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
     """
     TIMEOUT_SECONDS = 25 * 60  # 25 minutes
     INTERVAL = 3
+
+    # Sleep to ensure the task started
+    time.sleep(3)
 
     # Check how many tasks are there
     url = f"https://{bmc_ip}/{REDFISH_OEM}/TaskService/Tasks"
@@ -290,9 +296,6 @@ def main():
     # ----------------------------------------------------------------
     # 4. Wait for tasks to complete
     # ----------------------------------------------------------------
-    # Sleep to ensure the task started
-    time.sleep(2)
-
     tasks_wait(bmc_ip, bmc_username, bmc_password)
 
     # ----------------------------------------------------------------
