@@ -23,19 +23,21 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --------------------------------------------------------------------
-# Variables for porting between platforms
-# --------------------------------------------------------------------
-REDFISH_OEM = "redfish/v1/Oem/Supermicro/MI300X"
-REDFISH_MANAGER_BMC = "redfish/v1/Managers/1"
-REDFISH_SYSTEM_BMC = "redfish/v1/Systems/1"
-
-# --------------------------------------------------------------------
 # Setup argument parsing for optional debug mode
 # --------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Erase all MI300X logs via Redfish")
 parser.add_argument("--debug", action="store_true", help="Enable debug output")
 args = parser.parse_args()
 DEBUG = args.debug
+
+# --------------------------------------------------------------------
+# Constants for porting between platforms
+# --------------------------------------------------------------------
+REDFISH_OEM = "redfish/v1/Oem/Supermicro/MI300X"
+REDFISH_MANAGER_BMC = "redfish/v1/Managers/1"
+REDFISH_SYSTEM_BMC = "redfish/v1/Systems/1"
+PORT = 443
+PROTOCOL = "https"
 
 # --------------------------------------------------------------------
 # Helper Functions
@@ -46,7 +48,20 @@ def log(message: str):
 
 
 def check_response_success(response, error_message: str):
-    """Check if a requests.Response object is successful, exit otherwise."""
+    """
+    Check if a requests.Response object is successful; if not, log a
+    message with status code and exit. Specifically check for 403/404
+    to give more clarity.
+    """
+    if response.status_code == 403:
+        log("403 Forbidden: Possible username/password error.")
+        log(f"HTTP status code: {response.status_code}")
+        sys.exit(1)
+    elif response.status_code == 404:
+        log("404 Not Found: The specified resource or URL could not be found.")
+        log(f"HTTP status code: {response.status_code}")
+        sys.exit(1)
+
     if not response.ok:
         log(error_message)
         log(f"HTTP status code: {response.status_code}")
@@ -74,10 +89,10 @@ def prompt_for_bmc_credentials():
 def prompt_for_bmc_ip():
     """Prompt for BMC IP address if not set and validate the format."""
     bmc_ip = os.environ.get("BMC_IP", "")
-    ip_pattern = re.compile(r"^\d+\.\d+\.\d+\.\d+$")
+    ip_pattern = re.compile(r"^\d+\.\d+\.\d+\.\d+$")  # Simple IPv4 check
 
     while not ip_pattern.match(bmc_ip):
-        bmc_ip = input("Enter valid BMC IP Address: ")
+        bmc_ip = input("Enter valid BMC IP Address (IPv4): ")
 
     return bmc_ip
 
@@ -85,7 +100,7 @@ def prompt_for_bmc_ip():
 def http_request_with_retries(method, url, max_retries=3, delay=2, **kwargs):
     """
     Attempt an HTTP request up to `max_retries` times. If a transient error
-    like a connection timeout or reset occurs, wait `delay` seconds before
+    (connection timeout, reset, etc.) occurs, wait `delay` seconds before
     trying again.
 
     :param method: "get", "post", etc.
@@ -93,45 +108,47 @@ def http_request_with_retries(method, url, max_retries=3, delay=2, **kwargs):
     :param max_retries: Maximum number of total attempts.
     :param delay: Delay in seconds between retry attempts.
     :param kwargs: Additional arguments to pass to requests.request().
-    :return: requests.Response object on success; sys.exit on repeated failures.
+    :return: requests.Response object on success; sys.exit(1) on repeated failures.
     """
-
-    """Create a requests session with retry logic."""
     session = requests.Session()
     retries = Retry(
-        total=5,  # Number of retries
-        backoff_factor=2,  # Exponential backoff factor
-        status_forcelist=[500, 502, 503, 504],  # Retry on these HTTP errors
-        allowed_methods=["GET", "POST"],
+        total=max_retries,  # number of retries
+        backoff_factor=2,  # exponential backoff factor
+        status_forcelist=[500, 502, 503, 504],  # retry only on these status codes
+        allowed_methods=["GET", "POST", "PATCH"],
     )
-    session.mount("https://", HTTPAdapter(max_retries))
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    session.mount("http://", HTTPAdapter(max_retries=retries))
 
     for attempt in range(1, max_retries + 1):
         try:
-            if method == "get":
+            if method.lower() == "get":
                 response = session.get(url, verify=False, timeout=10, **kwargs)
-            elif method == "post":
+            elif method.lower() == "post":
                 response = session.post(url, verify=False, timeout=10, **kwargs)
+            elif method.lower() == "patch":
+                response = session.patch(url, verify=False, timeout=10, **kwargs)
             else:
-                raise ValueError("Unsupported HTTP method")
+                raise ValueError(f"Unsupported HTTP method: {method}")
+
             return response
+
         except (
             requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,
             requests.exceptions.RequestException,
         ) as e:
-            # These are typical transient errors that can occur on unreliable networks
             if attempt < max_retries:
-                log(
-                    f"Request error: {e}. Retrying in {delay} seconds (attempt {attempt}/{max_retries})."
+                print(
+                    f"Request error: {e}. Retrying in {delay} seconds "
+                    f"(attempt {attempt}/{max_retries})."
                 )
                 time.sleep(delay)
             else:
-                log(f"Request failed after {max_retries} attempts: {e}")
+                print(f"Request failed after {max_retries} attempts: {e}")
                 sys.exit(1)
 
-    # If somehow we got here, return None or exit
-    # (normally you'd never get here because of sys.exit).
+    # Should never reach here due to sys.exit(1)
     sys.exit(1)
 
 
@@ -140,17 +157,17 @@ def authenticate(bmc_ip, bmc_username, bmc_password):
     Check if the provided IP, username, and password are valid by querying
     the Redfish Managers resource.
     """
-    url = f"https://{bmc_ip}/{REDFISH_MANAGER_BMC}"
+    url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_MANAGER_BMC}"
     try:
         response = http_request_with_retries(
             "get", url, auth=(bmc_username, bmc_password)
         )
         if not response.ok:
-            log("Authentication check failed. HTTP code: " + str(response.status_code))
+            log(f"Authentication check failed. HTTP code: {response.status_code}")
             return False
         data = response.json()
-        # If there's an "error" key in the response, treat it as auth failure
         if "error" in data:
+            # Some BMCs return an 'error' key if authentication fails
             return False
     except Exception as e:
         log(f"Exception while authenticating: {e}")
@@ -169,7 +186,9 @@ def systemPowerOn(bmc_ip, bmc_username, bmc_password):
 
     log("Powering system on")
 
-    reset_url = f"https://{bmc_ip}/{REDFISH_SYSTEM_BMC}/Actions/ComputerSystem.Reset"
+    reset_url = (
+        f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_SYSTEM_BMC}/Actions/ComputerSystem.Reset"
+    )
     data = {"Action": "Reset", "ResetType": "On"}
 
     try:
@@ -185,7 +204,7 @@ def systemPowerOn(bmc_ip, bmc_username, bmc_password):
     log(f"Waiting for {dwell} seconds to confirm power is on")
     time.sleep(dwell)
 
-    bmc_url = f"https://{bmc_ip}/{REDFISH_SYSTEM_BMC}"
+    bmc_url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_SYSTEM_BMC}"
 
     try:
         response = http_request_with_retries(
@@ -226,7 +245,9 @@ def systemPowerOff(bmc_ip, bmc_username, bmc_password):
     dwell = 20
     log("Powering system off")
 
-    reset_url = f"https://{bmc_ip}/{REDFISH_SYSTEM_BMC}/Actions/ComputerSystem.Reset"
+    reset_url = (
+        f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_SYSTEM_BMC}/Actions/ComputerSystem.Reset"
+    )
     data = {"Action": "Reset", "ResetType": "ForceOff"}
 
     try:
@@ -242,7 +263,7 @@ def systemPowerOff(bmc_ip, bmc_username, bmc_password):
     log(f"Waiting for {dwell} seconds to confirm power is off")
     time.sleep(dwell)
 
-    bmc_url = f"https://{bmc_ip}/{REDFISH_SYSTEM_BMC}"
+    bmc_url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_SYSTEM_BMC}"
 
     try:
         response = http_request_with_retries(
@@ -281,9 +302,9 @@ def logsClear(bmc_ip, bmc_username, bmc_password):
     log("Clearing all logs on UBB")
 
     paths = [
-        f"https://{bmc_ip}/{REDFISH_OEM}/Systems/UBB/LogServices/Dump/Actions/LogService.ClearLog",
-        f"https://{bmc_ip}/{REDFISH_OEM}/Systems/UBB/LogServices/EventLog/Actions/LogService.ClearLog",
-        f"https://{bmc_ip}/{REDFISH_OEM}/Systems/UBB/LogServices/DiagLogs/Actions/LogService.ClearLog",
+        f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_OEM}/Systems/UBB/LogServices/Dump/Actions/LogService.ClearLog",
+        f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_OEM}/Systems/UBB/LogServices/EventLog/Actions/LogService.ClearLog",
+        f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_OEM}/Systems/UBB/LogServices/DiagLogs/Actions/LogService.ClearLog",
     ]
 
     for p in paths:

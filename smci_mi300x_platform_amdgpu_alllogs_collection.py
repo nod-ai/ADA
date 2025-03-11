@@ -23,18 +23,20 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --------------------------------------------------------------------
-# Variables for porting between platforms
-# --------------------------------------------------------------------
-REDFISH_OEM = "redfish/v1/Oem/Supermicro/MI300X"
-REDFISH_MANAGER_BMC = "redfish/v1/Managers/1"
-
-# --------------------------------------------------------------------
 # Setup argument parsing for optional debug mode
 # --------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Collect AllLogs from BMC via Redfish")
 parser.add_argument("--debug", action="store_true", help="Enable debug output")
 args = parser.parse_args()
 DEBUG = args.debug
+
+# --------------------------------------------------------------------
+# Constants for porting between platforms
+# --------------------------------------------------------------------
+REDFISH_OEM = "redfish/v1/Oem/Supermicro/MI300X"
+REDFISH_MANAGER_BMC = "redfish/v1/Managers/1"
+PORT = 443
+PROTOCOL = "https"
 
 # --------------------------------------------------------------------
 # Helper Functions
@@ -45,7 +47,20 @@ def log(message: str):
 
 
 def check_response_success(response, error_message: str):
-    """Check if a requests.Response object is successful, exit otherwise."""
+    """
+    Check if a requests.Response object is successful; if not, log a
+    message with status code and exit. Specifically check for 403/404
+    to give more clarity.
+    """
+    if response.status_code == 403:
+        log("403 Forbidden: Possible username/password error.")
+        log(f"HTTP status code: {response.status_code}")
+        sys.exit(1)
+    elif response.status_code == 404:
+        log("404 Not Found: The specified resource or URL could not be found.")
+        log(f"HTTP status code: {response.status_code}")
+        sys.exit(1)
+
     if not response.ok:
         log(error_message)
         log(f"HTTP status code: {response.status_code}")
@@ -73,10 +88,10 @@ def prompt_for_bmc_credentials():
 def prompt_for_bmc_ip():
     """Prompt for BMC IP address if not set and validate the format."""
     bmc_ip = os.environ.get("BMC_IP", "")
-    ip_pattern = re.compile(r"^\d+\.\d+\.\d+\.\d+$")
+    ip_pattern = re.compile(r"^\d+\.\d+\.\d+\.\d+$")  # Simple IPv4 check
 
     while not ip_pattern.match(bmc_ip):
-        bmc_ip = input("Enter valid BMC IP Address: ")
+        bmc_ip = input("Enter valid BMC IP Address (IPv4): ")
 
     return bmc_ip
 
@@ -94,14 +109,12 @@ def http_request_with_retries(method, url, max_retries=3, delay=2, **kwargs):
     :param kwargs: Additional arguments to pass to requests.request().
     :return: requests.Response object on success; sys.exit(1) on repeated failures.
     """
-
-    # Create a session and properly attach retry logic
     session = requests.Session()
     retries = Retry(
         total=max_retries,  # number of retries
         backoff_factor=2,  # exponential backoff factor
         status_forcelist=[500, 502, 503, 504],  # retry only on these status codes
-        allowed_methods=["GET", "POST"],
+        allowed_methods=["GET", "POST", "PATCH"],
     )
     session.mount("https://", HTTPAdapter(max_retries=retries))
     session.mount("http://", HTTPAdapter(max_retries=retries))
@@ -112,6 +125,8 @@ def http_request_with_retries(method, url, max_retries=3, delay=2, **kwargs):
                 response = session.get(url, verify=False, timeout=10, **kwargs)
             elif method.lower() == "post":
                 response = session.post(url, verify=False, timeout=10, **kwargs)
+            elif method.lower() == "patch":
+                response = session.patch(url, verify=False, timeout=10, **kwargs)
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
 
@@ -122,7 +137,6 @@ def http_request_with_retries(method, url, max_retries=3, delay=2, **kwargs):
             requests.exceptions.Timeout,
             requests.exceptions.RequestException,
         ) as e:
-            # Typical transient errors on unreliable networks
             if attempt < max_retries:
                 print(
                     f"Request error: {e}. Retrying in {delay} seconds "
@@ -133,7 +147,7 @@ def http_request_with_retries(method, url, max_retries=3, delay=2, **kwargs):
                 print(f"Request failed after {max_retries} attempts: {e}")
                 sys.exit(1)
 
-    # Normally unreachable because of sys.exit(1) on the last attempt
+    # Should never reach here due to sys.exit(1)
     sys.exit(1)
 
 
@@ -142,17 +156,17 @@ def authenticate(bmc_ip, bmc_username, bmc_password):
     Check if the provided IP, username, and password are valid by querying
     the Redfish Managers resource.
     """
-    url = f"https://{bmc_ip}/{REDFISH_MANAGER_BMC}"
+    url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_MANAGER_BMC}"
     try:
         response = http_request_with_retries(
             "get", url, auth=(bmc_username, bmc_password)
         )
         if not response.ok:
-            log("Authentication check failed. HTTP code: " + str(response.status_code))
+            log(f"Authentication check failed. HTTP code: {response.status_code}")
             return False
         data = response.json()
-        # If there's an "error" key in the response, treat it as auth failure
         if "error" in data:
+            # Some BMCs return an 'error' key if authentication fails
             return False
     except Exception as e:
         log(f"Exception while authenticating: {e}")
@@ -164,16 +178,16 @@ def authenticate(bmc_ip, bmc_username, bmc_password):
 def tasks_wait(bmc_ip, bmc_username, bmc_password):
     """
     Wait for all tasks in the TaskService to complete. Exits the script
-    if any task fails or times out.
+    if any task fails or if it times out.
     """
     TIMEOUT_SECONDS = 25 * 60  # 25 minutes
     INTERVAL = 3
 
-    # Sleep to ensure the task started
+    # Give the BMC a moment to register the newly-triggered tasks
     time.sleep(3)
 
-    # Check how many tasks are there
-    url = f"https://{bmc_ip}/{REDFISH_OEM}/TaskService/Tasks"
+    # Check how many tasks are have been created
+    url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_OEM}/TaskService/Tasks"
     try:
         response = http_request_with_retries(
             "get", url, auth=(bmc_username, bmc_password)
@@ -186,7 +200,7 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
         sys.exit(1)
 
     if DEBUG:
-        log(f"Tasks: {tasks}")
+        log(f"Tasks found: {tasks}")
 
     # If no tasks, nothing to wait for
     if tasks == 0:
@@ -198,7 +212,7 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
 
         while True:
             # Query the status of each task
-            task_url = f"https://{bmc_ip}/{REDFISH_OEM}/TaskService/Tasks/{task_index}"
+            task_url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_OEM}/TaskService/Tasks/{task_index}"
             try:
                 response = http_request_with_retries(
                     "get", task_url, auth=(bmc_username, bmc_password)
@@ -220,9 +234,10 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
                 log(f"Task {task_index} failed.")
                 sys.exit(1)
             elif status in ["Running", "New", "Pending"]:
+                # Show ongoing progress
                 newline_needed = True
                 print(
-                    f"\rTask {task_index} still running, elapsed time {elapsed_time}s",
+                    f"\rTask {task_index} is still running, elapsed {elapsed_time}s",
                     end="",
                 )
                 sys.stdout.flush()
@@ -231,7 +246,7 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
             else:
                 newline_needed = True
                 print(
-                    f"\rUnknown task status: {status}, task {task_index}, elapsed time {elapsed_time}s",
+                    f"\rUnknown task status: {status}, task {task_index}, elapsed {elapsed_time}s",
                     end="",
                 )
                 sys.stdout.flush()
@@ -240,12 +255,12 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
 
             if elapsed_time > TIMEOUT_SECONDS:
                 log(
-                    f"Task {task_index} failed to complete in {TIMEOUT_SECONDS // 60} minutes."
+                    f"Task {task_index} failed to complete within {TIMEOUT_SECONDS // 60} minutes."
                 )
                 sys.exit(1)
 
         if newline_needed:
-            print()  # Move to the next line
+            print()  # End the progress line
 
 
 def main():
@@ -259,7 +274,7 @@ def main():
     # 2. Test authentication
     # ----------------------------------------------------------------
     if not authenticate(bmc_ip, bmc_username, bmc_password):
-        log("Authentication failed, check IP address, username, and password")
+        log("Authentication failed. Please check IP address, username, and password.")
         log(f"IP address used: {bmc_ip}")
         log(f"Username used: {bmc_username}")
         if DEBUG:
@@ -271,7 +286,7 @@ def main():
     # ----------------------------------------------------------------
     log("Collecting AllLogs file...")
     collect_url = (
-        f"https://{bmc_ip}/{REDFISH_OEM}/Systems/UBB/"
+        f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_OEM}/Systems/UBB/"
         "LogServices/DiagLogs/Actions/LogService.CollectDiagnosticData"
     )
     payload = {"DiagnosticDataType": "OEM", "OEMDiagnosticDataType": "AllLogs"}
@@ -289,9 +304,9 @@ def main():
     # Extract Task ID from the response text
     match = re.search(r'Tasks/([^"]+)', task_response_text)
     if not match:
-        log("Script failed, task ID has no value")
+        log("Script failed, no valid task ID found in response.")
         sys.exit(1)
-    tasks_id = match.group(1)  # Though not directly used, we confirm it exists.
+    tasks_id = match.group(1)  # Not used further, but confirms presence
 
     # ----------------------------------------------------------------
     # 4. Wait for tasks to complete
@@ -301,9 +316,7 @@ def main():
     # ----------------------------------------------------------------
     # 5. Get count of diagnostic log entries
     # ----------------------------------------------------------------
-    entries_url = (
-        f"https://{bmc_ip}/{REDFISH_OEM}/Systems/UBB/" "LogServices/DiagLogs/Entries"
-    )
+    entries_url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_OEM}/Systems/UBB/LogServices/DiagLogs/Entries"
     try:
         response = http_request_with_retries(
             "get", entries_url, auth=(bmc_username, bmc_password)
@@ -316,16 +329,15 @@ def main():
         sys.exit(1)
 
     if entries_count == 0:
-        log("Script failed, logs not found")
+        log("Script failed, no diagnostic logs found.")
         sys.exit(1)
 
     # ----------------------------------------------------------------
     # 6. Find entry with the greatest 'Id'
     # ----------------------------------------------------------------
-    # We already have the JSON data in 'diag_data', which has a 'Members' list
     members = diag_data.get("Members", [])
     if not members:
-        log("Script failed, no Members in diag data.")
+        log("Script failed, 'Members' array is empty or missing.")
         sys.exit(1)
 
     id_greatest = -1
@@ -341,7 +353,7 @@ def main():
             continue
 
     if entry_greatest_index == -1:
-        log("Script failed, could not find a valid entry ID.")
+        log("Script failed, no valid numeric 'Id' found in the log entries.")
         sys.exit(1)
 
     if DEBUG:
@@ -352,7 +364,7 @@ def main():
     # ----------------------------------------------------------------
     entry_type = members[entry_greatest_index].get("OEMDiagnosticDataType", "")
     if entry_type != "AllLogs":
-        log(f"Entry ID {id_greatest} is of type {entry_type}, rather than AllLogs")
+        log(f"Entry ID {id_greatest} is of type '{entry_type}' instead of 'AllLogs'.")
         sys.exit(1)
 
     # ----------------------------------------------------------------
@@ -362,20 +374,19 @@ def main():
 
     attachment_uri = members[entry_greatest_index].get("AdditionalDataURI", "")
     if not attachment_uri:
-        log("No AdditionalDataURI found for the chosen entry.")
+        log("No 'AdditionalDataURI' found for the chosen entry.")
         sys.exit(1)
 
-    download_url = f"https://{bmc_ip}{attachment_uri}"
+    download_url = f"{PROTOCOL}://{bmc_ip}:{PORT}{attachment_uri}"
     filename = (
         f"{bmc_ip}_{datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}_all_logs.tar.xz"
     )
 
     try:
-        # Use the retry wrapper, passing stream=True
         with http_request_with_retries(
             "get", download_url, auth=(bmc_username, bmc_password), stream=True
         ) as r:
-            check_response_success(r, f"Failed to download logs at {download_url}.")
+            check_response_success(r, f"Failed to download logs at {download_url}")
             with open(filename, "wb") as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     if chunk:
