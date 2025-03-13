@@ -19,12 +19,15 @@ package main
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"log"
+	"net"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -61,6 +64,7 @@ type Config struct {
 	context              *tls.Config
 	eventCount           int
 	dataBuffer           []byte
+	TlsTimeOut           string
 }
 
 type TriggerEvent struct {
@@ -74,7 +78,12 @@ type PrometheusConfig struct {
 	Severity []string `json:"Severity"`
 }
 
-func setupConfig() Config {
+type target struct {
+	Targets []string          `yaml:"targets"`
+	Labels  map[string]string `yaml:"labels"`
+}
+
+func setupConfig(targetFile string) Config {
 	// Load .env file
 	err := godotenv.Load()
 	if err != nil {
@@ -125,6 +134,7 @@ func setupConfig() Config {
 	AppConfig.SlurmUser = os.Getenv("SLURM_USER")
 	AppConfig.SlurmDrainExcludeStr = os.Getenv("SLURM_DRAIN_EXCLUDE_REASON_LIST")
 	AppConfig.SlurmScontrolPath = os.Getenv("SLURM_SCONTROL_PATH")
+	AppConfig.TlsTimeOut = os.Getenv("TLS_TIMEOUT")
 
 	subscriptionPayloadJSON := os.Getenv("SUBSCRIPTION_PAYLOAD")
 	if err := json.Unmarshal([]byte(subscriptionPayloadJSON), &AppConfig.SubscriptionPayload); err != nil {
@@ -154,10 +164,63 @@ func setupConfig() Config {
 	redfishServersJSON := os.Getenv("REDFISH_SERVERS")
 	if redfishServersJSON == "" {
 		log.Println("REDFISH_SERVERS environment variable is not set or is empty")
+	} else {
+		if err := json.Unmarshal([]byte(redfishServersJSON), &AppConfig.RedfishServers); err != nil {
+			log.Fatalf("Failed to parse REDFISH_SERVERS: %v", err)
+		}
+	}
+
+	// Read and parse the REDFISH_SERVERS_COMMON_CONFIG environment variable
+	redfishServersCommonConfigJSON := os.Getenv("REDFISH_SERVERS_COMMON_CONFIG")
+	if redfishServersCommonConfigJSON == "" {
+		log.Println("redfishServersCommonConfigJSON environment variable is not set or is empty")
 		return AppConfig
 	}
-	if err := json.Unmarshal([]byte(redfishServersJSON), &AppConfig.RedfishServers); err != nil {
-		log.Fatalf("Failed to parse REDFISH_SERVERS: %v", err)
+	redfishServersCommonConfig := RedfishServersCommongConfig{}
+	if err := json.Unmarshal([]byte(redfishServersCommonConfigJSON), &redfishServersCommonConfig); err != nil {
+		log.Fatalf("Failed to parse REDFISH_SERVERS_COMMON_CONFIG: %v", err)
+	}
+
+	if targetFile == "" {
+		log.Println("No target file provided")
+		return AppConfig
+	}
+
+	targetYamlFile, err := os.ReadFile(targetFile)
+
+	if err != nil {
+		log.Fatalf("Failed to read file: %v", targetFile)
+	}
+
+	targets := []target{}
+
+	err = yaml.Unmarshal(targetYamlFile, &targets)
+
+	if err != nil {
+		log.Fatalf("Error parsing target file: %v | err: %v", targetFile, err)
+	}
+
+	for _, t := range targets {
+		log.Println("target: ", t.Targets)
+
+		for _, hostName := range t.Targets {
+			// add this target to Redfish servers
+			server := RedfishServer{}
+			bmcHost := fmt.Sprintf(hostName+".%v", redfishServersCommonConfig.HostSuffix)
+			ips, err := net.LookupIP(bmcHost)
+			if err != nil || len(ips) == 0 {
+				log.Printf("[error] Couldn't get the IP for host: %v | ips: %v | err: %v", bmcHost, ips, err)
+				continue
+			}
+			log.Println("IPs: ", ips)
+
+			server.IP = fmt.Sprintf("https://%v", ips[0])
+			server.LoginType = "Session"
+			server.Username = redfishServersCommonConfig.UserName
+			server.Password = redfishServersCommonConfig.Password
+			server.SlurmNode = hostName
+			AppConfig.RedfishServers = append(AppConfig.RedfishServers, server)
+		}
 	}
 
 	return AppConfig

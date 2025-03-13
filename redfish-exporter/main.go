@@ -26,6 +26,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -36,15 +37,24 @@ import (
 
 func main() {
 	var (
-		enableSlurm = flag.Bool("enable-slurm", false, "Enable slurm")
+		targetFile          string
+		enableSlurm         = flag.Bool("enable-slurm", false, "Enable slurm")
+		subscriptionMapLock sync.Mutex // to guard access to the map
 	)
+
+	flag.StringVar(&targetFile, "target", "", "Path to the target file for host/slurm node names")
 	flag.Parse()
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Println("Starting Redfish Event Listener/Exporter")
 
+	/*
+		if targetFile == "" {
+			log.Fatalf("Target file for host/slurm node names not set: Usage: ./amd-redfish-exporter --enable-slurm -target <filename>")
+		}
+	*/
 	// Setup configuration
-	AppConfig := setupConfig()
+	AppConfig := setupConfig(targetFile)
 
 	// Log the initialized config
 	log.Printf("Initialized Config: %+v", AppConfig)
@@ -57,8 +67,10 @@ func main() {
 		go slurmQueue.ProcessEventActionQueue()
 	}
 
+	subscriptionMap := make(map[string]string)
+
 	// Subscribe the listener to the event stream for all servers
-	subscriptionMap, err := CreateSubscriptionsForAllServers(AppConfig.RedfishServers, AppConfig.SubscriptionPayload)
+	err := CreateSubscriptionsForAllServers(AppConfig.RedfishServers, AppConfig.SubscriptionPayload, subscriptionMap, &subscriptionMapLock, AppConfig.TlsTimeOut)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -99,7 +111,9 @@ func main() {
 	time.Sleep(time.Second)
 
 	// Unsubscribe the listener from all servers
+	subscriptionMapLock.Lock()
 	DeleteSubscriptionsFromAllServers(AppConfig.RedfishServers, subscriptionMap)
+	subscriptionMapLock.Unlock()
 
 	cancel()
 
