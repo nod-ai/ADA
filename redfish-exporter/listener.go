@@ -27,6 +27,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/nod-ai/ADA/redfish-exporter/metrics"
@@ -219,7 +220,15 @@ func (s *Server) processRequest(AppConfig Config, conn net.Conn, req *http.Reque
 		log.Printf("Origin Of Condition: %s", originOfCondition)
 		for _, triggerEvent := range AppConfig.TriggerEvents {
 			if severity == triggerEvent.Severity {
-				log.Printf("Matched Trigger Event: %s with action %s", triggerEvent.Severity, triggerEvent.Action)
+				if triggerEvent.Message != "" {
+					re := regexp.MustCompile(triggerEvent.Message)
+					match := re.FindAllString(message, -1)
+
+					if len(match) == 0 {
+						continue
+					}
+				}
+				log.Printf("Matched Trigger Event: %s | message: %s | with action %s", triggerEvent.Severity, triggerEvent.Message, triggerEvent.Action)
 				// Sending event belongs to redfish_utils. Each server may have different slurm node associated, and redfish_servers has the info/map.
 				if s.slurmQueue != nil {
 					redfishServerInfo := getServerInfoByIP(AppConfig.RedfishServers, ip)
@@ -227,7 +236,18 @@ func (s *Server) processRequest(AppConfig Config, conn net.Conn, req *http.Reque
 						log.Printf("failed to get the slurm node name, cannot perform action: %v", triggerEvent.Action)
 						break
 					}
-					s.slurmQueue.Add(redfishServerInfo.IP, redfishServerInfo.SlurmNode, triggerEvent.Severity, triggerEvent.Action)
+					evt := slurm.AddEventReq{
+						RedfishServerIP:   redfishServerInfo.IP,
+						SlurmNodeName:     redfishServerInfo.SlurmNode,
+						Severity:          triggerEvent.Severity,
+						Action:            triggerEvent.Action,
+						DrainReasonPrefix: triggerEvent.DrainReasonPrefix,
+						MessageId:         messageId,
+						Message:           message,
+						ExcludeStr:        AppConfig.SlurmDrainExcludeStr,
+						ScontrolPath:      AppConfig.SlurmScontrolPath,
+					}
+					s.slurmQueue.Add(evt)
 				}
 				break
 			}

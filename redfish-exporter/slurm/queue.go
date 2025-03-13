@@ -2,6 +2,7 @@ package slurm
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 
@@ -9,14 +10,32 @@ import (
 )
 
 const (
-	Drain = "DrainNode"
+	Drain            = "DrainNode"
+	ExlcudeReasonSet = "DRAIN_EXCLUDE_REASON_SET"
 )
 
+type AddEventReq struct {
+	RedfishServerIP   string
+	SlurmNodeName     string
+	Severity          string
+	Action            string
+	DrainReasonPrefix string
+	MessageId         string
+	Message           string
+	ExcludeStr        string
+	ScontrolPath      string
+}
+
 type eventsActionReq struct {
-	redfishServerIP string
-	slurmNodeName   string
-	severity        string
-	action          string
+	redfishServerIP   string
+	slurmNodeName     string
+	severity          string
+	action            string
+	drainReasonPrefix string
+	messageId         string
+	message           string
+	excludeStr        string
+	scontrolPath      string
 }
 
 type SlurmQueue struct {
@@ -28,12 +47,17 @@ func InitSlurmQueue(ctx context.Context) *SlurmQueue {
 	return &SlurmQueue{ctx: ctx, queue: make(chan *eventsActionReq)}
 }
 
-func (q *SlurmQueue) Add(redfishServerIP, slurmNodeName, severity, action string) {
+func (q *SlurmQueue) Add(evt AddEventReq) {
 	q.queue <- &eventsActionReq{
-		redfishServerIP: redfishServerIP,
-		slurmNodeName:   slurmNodeName,
-		severity:        severity,
-		action:          action,
+		redfishServerIP:   evt.RedfishServerIP,
+		slurmNodeName:     evt.SlurmNodeName,
+		severity:          evt.Severity,
+		action:            evt.Action,
+		drainReasonPrefix: evt.DrainReasonPrefix,
+		messageId:         evt.MessageId,
+		message:           evt.Message,
+		excludeStr:        evt.ExcludeStr,
+		scontrolPath:      evt.ScontrolPath,
 	}
 }
 
@@ -65,19 +89,24 @@ func (q *SlurmQueue) ProcessEventActionQueue() {
 	}
 }
 
+func getDrainReasonString(prefix, msg, msgId, severity string) string {
+	ret := fmt.Sprintf("%s:redfishlistener:%s:%s:%s", prefix, severity, msgId, msg)
+	return ret
+}
+
 func (q *SlurmQueue) performEventAction(req *eventsActionReq) error {
 	if len(strings.TrimSpace(req.slurmNodeName)) == 0 {
 		return nil
 	}
 
-	slurmClient := GetClient()
-	if slurmClient == nil {
-		return nil
-	}
-
 	if req.action == Drain {
-		err := slurmClient.DrainNode(req.slurmNodeName)
+		reason := getDrainReasonString(req.drainReasonPrefix, req.message, req.messageId, req.severity)
+		err := DrainNodeWithScontrol(req.slurmNodeName, reason, req.excludeStr, req.scontrolPath)
 		if err != nil {
+			if strings.Contains(err.Error(), ExlcudeReasonSet) {
+				log.Printf("Node not drained: %v", err.Error())
+				return nil
+			}
 			log.Printf("Error draining node: %v", err)
 			return err
 		}
