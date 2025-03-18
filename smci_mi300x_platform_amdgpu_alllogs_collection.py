@@ -35,6 +35,7 @@ DEBUG = args.debug
 # --------------------------------------------------------------------
 REDFISH_OEM = "redfish/v1/Oem/Supermicro/MI300X"
 REDFISH_MANAGER_BMC = "redfish/v1/Managers/1"
+REDFISH_UBB_TASKS = "redfish/v1/Oem/Supermicro/MI300X/TaskService/Tasks"
 PORT = 443
 PROTOCOL = "https"
 
@@ -184,10 +185,10 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
     INTERVAL = 3
 
     # Give the BMC a moment to register the newly-triggered tasks
-    time.sleep(3)
+    time.sleep(5)
 
     # Check how many tasks are have been created
-    url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_OEM}/TaskService/Tasks"
+    url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_UBB_TASKS}"
     try:
         response = http_request_with_retries(
             "get", url, auth=(bmc_username, bmc_password)
@@ -196,10 +197,11 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
         data = response.json()
         tasks = data.get("Members@odata.count", 0)
     except Exception as e:
-        log(f"Exception while querying tasks: {e}")
+        log(f"Exception while querying {url} tasks: {e}")
         sys.exit(1)
 
     if DEBUG:
+        print(f"Tasks query response: {response.text}")
         log(f"Tasks found: {tasks}")
 
     # If no tasks, nothing to wait for
@@ -212,7 +214,7 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
 
         while True:
             # Query the status of each task
-            task_url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_OEM}/TaskService/Tasks/{task_index}"
+            task_url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_UBB_TASKS}/{task_index}"
             try:
                 response = http_request_with_retries(
                     "get", task_url, auth=(bmc_username, bmc_password)
@@ -296,13 +298,15 @@ def main():
             "post", collect_url, auth=(bmc_username, bmc_password), json=payload
         )
         check_response_success(response, "Failed to collect diagnostic data.")
-        task_response_text = response.text
     except Exception as e:
         log(f"Exception while collecting diagnostic data: {e}")
         sys.exit(1)
 
+    if DEBUG:
+        print(f"AllLogs request response: {response.text}")
+
     # Extract Task ID from the response text
-    match = re.search(r'Tasks/([^"]+)', task_response_text)
+    match = re.search(r'Tasks/([^"]+)', response.text)
     if not match:
         log("Script failed, no valid task ID found in response.")
         sys.exit(1)
