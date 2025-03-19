@@ -27,8 +27,10 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # --------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Collect AllLogs from BMC via Redfish")
 parser.add_argument("--debug", action="store_true", help="Enable debug output")
+parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 args = parser.parse_args()
 DEBUG = args.debug
+VERBOSE = args.verbose
 
 # --------------------------------------------------------------------
 # Constants for porting between platforms
@@ -73,9 +75,9 @@ def prompt_for_bmc_credentials():
     bmc_username = os.environ.get("BMC_USERNAME")
     bmc_password = os.environ.get("BMC_PASSWORD")
 
-    if not bmc_username:
+    while not bmc_username:
         bmc_username = input("Enter BMC Username: ")
-    if not bmc_password:
+    while not bmc_password:
         if DEBUG:
             bmc_password = input("Enter BMC Password: ")
         else:
@@ -120,6 +122,9 @@ def http_request_with_retries(method, url, max_retries=3, delay=2, **kwargs):
     session.mount("https://", HTTPAdapter(max_retries=retries))
     session.mount("http://", HTTPAdapter(max_retries=retries))
 
+    if VERBOSE:
+        print(f"{method} method for URL: {url}")
+
     for attempt in range(1, max_retries + 1):
         try:
             if method.lower() == "get":
@@ -130,6 +135,9 @@ def http_request_with_retries(method, url, max_retries=3, delay=2, **kwargs):
                 response = session.patch(url, verify=False, timeout=10, **kwargs)
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
+
+            if VERBOSE:
+                print(f"Response {attempt}: {response.text}")
 
             return response
 
@@ -201,7 +209,6 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
         sys.exit(1)
 
     if DEBUG:
-        print(f"Tasks query response: {response.text}")
         log(f"Tasks found: {tasks}")
 
     # If no tasks, nothing to wait for
@@ -215,6 +222,7 @@ def tasks_wait(bmc_ip, bmc_username, bmc_password):
         while True:
             # Query the status of each task
             task_url = f"{PROTOCOL}://{bmc_ip}:{PORT}/{REDFISH_UBB_TASKS}/{task_index}"
+
             try:
                 response = http_request_with_retries(
                     "get", task_url, auth=(bmc_username, bmc_password)
@@ -301,9 +309,6 @@ def main():
     except Exception as e:
         log(f"Exception while collecting diagnostic data: {e}")
         sys.exit(1)
-
-    if DEBUG:
-        print(f"AllLogs request response: {response.text}")
 
     # Extract Task ID from the response text
     match = re.search(r'Tasks/([^"]+)', response.text)
